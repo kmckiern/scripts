@@ -73,7 +73,11 @@ def neighbors(n):
 
 # Finds the modulus of a vector.
 def modulus(v):
+<<<<<<< HEAD
 	modulus = np.sqrt(np.dot(v,v))
+=======
+	modulus = np.absolute(np.sqrt(np.dot(v,v)))
+>>>>>>> d023e608b2f20cd1d0210cd7a3c67c42bd070067
 	return modulus
 
 # Normalizes a vector.
@@ -131,7 +135,11 @@ def s_cd(ndx_f,trj_f):
 	phi = 0.9557
 	z = np.array([0,0,1])
 
+<<<<<<< HEAD
 	for snap_t in range(0,n_snaps):
+=======
+	for snap_t in range(n_snaps-10,n_snaps):
+>>>>>>> d023e608b2f20cd1d0210cd7a3c67c42bd070067
 		tail_length = len(trj_qs[snap_ts[snap_t]])
 		s_cd = {}
 
@@ -159,6 +167,7 @@ def s_cd(ndx_f,trj_f):
 				# Find the angle between v_prior and v_post.
 				angl = angle(v_prior,v_post)
 
+<<<<<<< HEAD
 				# Rotate v_post about the nrml_v to bisect the v plane, and then invert to bisect the c-d plane.
 				cd_bisector = (-.5)*rotation(v_post,nrml_v,-1*angl/2)
 
@@ -168,6 +177,17 @@ def s_cd(ndx_f,trj_f):
 				# Rotate v_post_to_cd_plane to the cd_axes.
 				cd_axis1 = rotation(cd_bisector,vv_plane_x,phi)
 				cd_axis2 = rotation(cd_bisector,vv_plane_x,-1*phi)
+=======
+				# Rotate v_post into the C-D plane.
+				alpha = -1*(np.pi - (angl/2))
+				v_post_to_cd_plane = rotation(v_post,nrml_v,alpha)
+				# Rotate v_post so that it is perpendicular to the c_v normal vector.
+				beta = -1*((np.pi - angl)/2)
+				vv_plane_x = rotation(v_post,nrml_v,beta)
+				# Rotate v_post_to_cd_plane to the cd_axes.
+				cd_axis1 = rotation(v_post_to_cd_plane,vv_plane_x,phi)
+				cd_axis2 = rotation(v_post_to_cd_plane,vv_plane_x,-1*phi)
+>>>>>>> d023e608b2f20cd1d0210cd7a3c67c42bd070067
 
 				# Find angle between CD axis and the global normal vector of the bilayer.
 				beta1 = angle(cd_axis1,z)

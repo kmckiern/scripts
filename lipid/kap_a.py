@@ -8,7 +8,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--edr')
 parser.add_argument('--col')
 parser.add_argument('--temp')
+parser.add_argument('--save_al', action='store_true')
 args = parser.parse_args()
+
+k = 1.3806488e-23
+nl = 64
 
 # Parses rvc file.
 def parse(input_file, col1, col2):
@@ -33,15 +37,14 @@ def main():
 	col1 = int(args.col)
 	col2 = (col1 + 1)
 	t = args.temp
-	k = 1.3806e-23
-	nl = 64
 
 	time, al = parse(input_file, col1, col2)
+    if args.save_al:
+        np.savetxt('al_ts_%i.xvg' % t, zip(timw, al))
 
 	avg = np.average(al)
 	fluc = np.average(al**2) - avg**2
-
-	kap = (2 * k * t * avg) / (nl * fluc * 1.0)
+    kap = 1e3 * (2 * k * t / nl) * (avg * 1.0/ fluc)
 
 	print kap
 

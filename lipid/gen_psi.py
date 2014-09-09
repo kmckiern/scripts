@@ -22,19 +22,12 @@ def gen_specz(b, t):
         return 'set {\n    basis    %s\n    guess    sad\n    print    1\n}\n\nenergy(\'%s\')\n' % (b, t)
 
 def main():
-    options = opts.__dict__
-    
-    mol_xyz = options['df']
-    theory = options['theory']
-    basis = options['basis']
-    of = options['of']
-
-    with open(of, 'w') as file:
+    with open(opts.of, 'w') as file:
         file.write('memory 12 gb\n\n')
         file.write('molecule DPPC {\n0 1\n')
-        file.writelines(open(mol_xyz, 'r').readlines()[2:])
+        file.writelines(open(opts.df, 'r').readlines()[2:])
         file.write('no_reorient\n}\n\n')
-        file.write(gen_specz(basis, theory))
+        file.write(gen_specz(opts.basis, opts.theory))
 
 if __name__ == '__main__':
     main()

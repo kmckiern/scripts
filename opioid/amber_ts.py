@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
 parser = argparse.ArgumentParser(description='Amber output file property plotter')
-parser.add_argument('--out_file', type=str, help='Amber output file')
+parser.add_argument('--out_dir', type=str, help='Amber output file directory')
 args = parser.parse_args()
 
 # Generalize this to represent a specified subset.
@@ -51,7 +51,7 @@ def parse_out(of, props):
             record = True
     return data_arr
 
-def gen_plots(ID, data_arr, props):
+def gen_plots(ID, data_arrays, props):
     '''
     props: list of properties strings we wish to plot.
         index is mapped?
@@ -59,28 +59,34 @@ def gen_plots(ID, data_arr, props):
     ts: list of numpy time serieses 
     '''
     # Pull trj time information.
-    time_ax = np.array(data_arr[:, props['TIME(PS)']])
     pdfs = PdfPages('%s_ts.pdf' % ID)
     for p in props:
-        plt.ylabel(p)
-        plt.xlabel('t / ps')
-        plt.grid(True)
-        plt.plot(time_ax, data_arr[:, props[p]])
-        pdfs.savefig()
-        plt.clf()
+        if p in ('TIME(PS)', 'NSTEP', 'EHBOND'):
+            continue
+        else:
+            plt.ylabel(p)
+            plt.xlabel('t / ps')
+            plt.grid(True)
+            for arr in data_arrays:
+                time_ax = np.array(arr[:, props['TIME(PS)']])
+                plt.plot(time_ax, arr[:, props[p]], alpha=.5)
+                plt.plot(time_ax[-1], arr[:, props[p]][-1], 'kD', ms=10)
+            pdfs.savefig()
+            plt.clf()
     pdfs.close()
 
 def main():
-    out_data = args.out_file
-    property_list = property_ndxs.keys()
+    out_data = args.out_dir
+    out_files = [f for f in os.listdir(out_data) if '.out' in f]
 
     # Parse amber output file, return data matrix.
-    data_mtrx = parse_out(out_data, property_ndxs)
-    # np.savetxt('dm.dat', data_mtrx, fmt='%1.4f')
+    data_mtrxs = []
+    for mdcrd in out_files:
+        data_mtrxs.append(parse_out(out_data + '/' + mdcrd, property_ndxs))
 
     # Plot 
-    write_pref = out_data.split('.')[0]
-    gen_plots(write_pref, data_mtrx, property_ndxs) 
+    write_pref = out_data + 'test'
+    gen_plots(write_pref, data_mtrxs, property_ndxs) 
 
 if __name__ == '__main__':
     main()

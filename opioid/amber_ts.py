@@ -28,6 +28,10 @@ args = parser.parse_args()
 property_ndxs = {'ANGLE': 8, 'BOND': 7, 'DIHED': 9, 'Density': 20, 'EEL': 11, 'EELEC': 13, 'EHBOND': 14, 'EKCMT': 16, 'EKtot': 5, 'EPtot': 6, 'Etot': 4, 'NB': 10, 'NSTEP': 0, 'PRESS': 3, 'RESTRAINT': 15, 'SURFTEN': 19, 'TEMP(K)': 2, 'TIME(PS)': 1, 'VDWAALS': 12, 'VIRIAL': 17, 'VOLUME': 18}
 
 def parse_out(of, props):
+    """
+    of: mdcrd.out file for parsing.
+    props: system properties of interest.
+    """
     # initialize
     num_frames = int(subp.Popen(['grep', '-c', 'TIME', of], stdout=subp.PIPE).communicate()[0])
     data_arr = np.zeros((num_frames, len(props)))
@@ -51,12 +55,12 @@ def parse_out(of, props):
             record = True
     return data_arr
 
-def gen_plots(ID, data_arrays, props):
+def gen_plots(ID, data_arrays, props, file_labels):
     '''
-    props: list of properties strings we wish to plot.
-        index is mapped?
-    time_ax: linear array of time points over specified range.
-    ts: list of numpy time serieses 
+    ID: for naming the PDF.
+    data_arrays: time series matrix for all files.
+    props: list of properties we wish to plot.
+    file_labels: file names (for legend).
     '''
     # Pull trj time information.
     pdfs = PdfPages('%s_ts.pdf' % ID)
@@ -67,10 +71,12 @@ def gen_plots(ID, data_arrays, props):
             plt.ylabel(p)
             plt.xlabel('t / ps')
             plt.grid(True)
-            for arr in data_arrays:
+            for ndx, arr in enumerate(data_arrays):
                 time_ax = np.array(arr[:, props['TIME(PS)']])
-                plt.plot(time_ax, arr[:, props[p]], alpha=.5)
+                data_label = file_labels[ndx].split('/')[-1].split('.')[0]
+                plt.plot(time_ax, arr[:, props[p]], alpha=.5, label=data_label)
                 plt.plot(time_ax[-1], arr[:, props[p]][-1], 'kD', ms=10)
+            plt.legend(prop={'size':8})
             pdfs.savefig()
             plt.clf()
     pdfs.close()
@@ -86,7 +92,7 @@ def main():
 
     # Plot 
     write_pref = out_data + 'test'
-    gen_plots(write_pref, data_mtrxs, property_ndxs) 
+    gen_plots(write_pref, data_mtrxs, property_ndxs, out_files) 
 
 if __name__ == '__main__':
     main()

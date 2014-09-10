@@ -71,17 +71,18 @@ def gen_plots(ID, data_arrays, props, file_labels):
         if p in ('TIME(PS)', 'NSTEP', 'EHBOND'):
             continue
         else:
+            n_colors = len(plt.rcParams['axes.color_cycle'])
             plt.ylabel(p)
             plt.xlabel('t / ps')
             plt.grid(True)
             for ndx, arr in enumerate(data_arrays):
                 time_ax = np.array(arr[:, props['TIME(PS)']])
                 data_label = file_labels[ndx].split('/')[-1].split('.')[0]
-                plt.plot(time_ax, arr[:, props[p]], alpha=.5, label=data_label)
+                plt.plot(time_ax, arr[:, props[p]], alpha=.66, label=data_label)
                 if args.final:
-                    plt.plot(time_ax[-1], arr[:, props[p]][-1], 'kD', ms=10)
+                    plt.plot(time_ax[-1], arr[:, props[p]][-1], 'o', ms=12, color=plt.rcParams['axes.color_cycle'][ndx % n_colors])
             if args.legend:
-                plt.legend(prop={'size':8})
+                plt.legend(prop={'size':6})
             pdfs.savefig()
             plt.clf()
     pdfs.close()

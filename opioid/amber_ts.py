@@ -22,6 +22,9 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 parser = argparse.ArgumentParser(description='Amber output file property plotter')
 parser.add_argument('--out_dir', type=str, help='Amber output file directory')
+parser.add_argument('--pdf_name', type=str, default='time_series', help='Name of final pdf file')
+parser.add_argument('--legend', action='store_true', help='Show legend on plots')
+parser.add_argument('--final', action='store_true', help='Highlight time series final point')
 args = parser.parse_args()
 
 # Generalize this to represent a specified subset.
@@ -63,7 +66,7 @@ def gen_plots(ID, data_arrays, props, file_labels):
     file_labels: file names (for legend).
     '''
     # Pull trj time information.
-    pdfs = PdfPages('%s_ts.pdf' % ID)
+    pdfs = PdfPages(ID + '.pdf')
     for p in props:
         if p in ('TIME(PS)', 'NSTEP', 'EHBOND'):
             continue
@@ -75,8 +78,10 @@ def gen_plots(ID, data_arrays, props, file_labels):
                 time_ax = np.array(arr[:, props['TIME(PS)']])
                 data_label = file_labels[ndx].split('/')[-1].split('.')[0]
                 plt.plot(time_ax, arr[:, props[p]], alpha=.5, label=data_label)
-                plt.plot(time_ax[-1], arr[:, props[p]][-1], 'kD', ms=10)
-            plt.legend(prop={'size':8})
+                if args.final:
+                    plt.plot(time_ax[-1], arr[:, props[p]][-1], 'kD', ms=10)
+            if args.legend:
+                plt.legend(prop={'size':8})
             pdfs.savefig()
             plt.clf()
     pdfs.close()
@@ -91,7 +96,7 @@ def main():
         data_mtrxs.append(parse_out(out_data + '/' + mdcrd, property_ndxs))
 
     # Plot 
-    write_pref = out_data + 'test'
+    write_pref = out_data + args.pdf_name
     gen_plots(write_pref, data_mtrxs, property_ndxs, out_files) 
 
 if __name__ == '__main__':

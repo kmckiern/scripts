@@ -2,8 +2,8 @@
 
 """
 Reads an AMBER mdcrd.out file, and plots specified properties over a specified range.
-
 For now, it just plot all of the property data, over all time, from the mdcrd.out file.
+
 In the future, I'd like to add the ability to:
     - take CL input for a subset of the properties to be plotted
         data_arr does not need to be built fully
@@ -12,6 +12,8 @@ In the future, I'd like to add the ability to:
         can't think of a better way to get number of frames without reading in file.
     - have final points print on top of ts data.
     - figure out what to do with the legend.
+    - if job is terminated, some vals aren't recorded.
+        exception handling.
 """
 
 import subprocess as subp
@@ -29,7 +31,7 @@ parser.add_argument('--final', action='store_true', help='Highlight time series 
 args = parser.parse_args()
 
 # Generalize this to represent a specified subset.
-property_ndxs = {'ANGLE': 8, 'BOND': 7, 'DIHED': 9, 'Density': 20, 'EEL': 11, 'EELEC': 13, 'EHBOND': 14, 'EKCMT': 16, 'EKtot': 5, 'EPtot': 6, 'Etot': 4, 'NB': 10, 'NSTEP': 0, 'PRESS': 3, 'RESTRAINT': 15, 'SURFTEN': 19, 'TEMP(K)': 2, 'TIME(PS)': 1, 'VDWAALS': 12, 'VIRIAL': 17, 'VOLUME': 18}
+property_ndxs = {'ANGLE': 8, 'BOND': 7, 'DIHED': 9, 'Density': 20, 'EEL': 11, 'EELEC': 13, 'EHBOND': 14, 'EKCMT': 16, 'EKtot': 5, 'EPtot': 6, 'Etot': 4, 'NB': 10, 'NSTEP': 0, 'PRESS': 3, 'RESTRAINT': 15, 'SURFTEN': 19, 'TEMP(K)': 2, 'TIME(PS)': 1, 'VDWAALS': 12, 'VIRIAL': 17, 'VOLUME': 18, 'EAMBER (non-restraint)': 21}
 
 def parse_out(of, props):
     """
@@ -38,6 +40,9 @@ def parse_out(of, props):
     """
     # initialize
     num_frames = int(subp.Popen(['grep', '-c', 'TIME', of], stdout=subp.PIPE).communicate()[0])
+    summary_frames = int(subp.Popen(['grep', '-c', 'A V E R A G E S', of], stdout=subp.PIPE).communicate()[0])
+    summary_frames += int(subp.Popen(['grep', '-c', 'F L U C T U A T I O N S', of], stdout=subp.PIPE).communicate()[0])
+    num_frames -= summary_frames
     data_arr = np.zeros((num_frames, len(props)))
     frame = 0
     record = False
@@ -46,8 +51,9 @@ def parse_out(of, props):
         # skip blank lines
         if not line.strip():
             continue
+        line = line.replace('=-', '= -')
         l = line.split()
-        if record:
+        if record and frame < num_frames: 
             if l[0] in props:
                 for ndx, ent in enumerate(l):
                     if ent in props:

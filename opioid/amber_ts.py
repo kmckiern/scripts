@@ -5,12 +5,13 @@ Reads an AMBER mdcrd.out file, and plots specified properties over a specified r
 
 For now, it just plot all of the property data, over all time, from the mdcrd.out file.
 In the future, I'd like to add the ability to:
-    - compare different out files on same plots
     - take CL input for a subset of the properties to be plotted
         data_arr does not need to be built fully
     - take in arguments for the frame range.
     - cut out os calls.
         can't think of a better way to get number of frames without reading in file.
+    - have final points print on top of ts data.
+    - figure out what to do with the legend.
 """
 
 import subprocess as subp
@@ -78,7 +79,7 @@ def gen_plots(ID, data_arrays, props, file_labels):
             for ndx, arr in enumerate(data_arrays):
                 time_ax = np.array(arr[:, props['TIME(PS)']])
                 data_label = file_labels[ndx].split('/')[-1].split('.')[0]
-                plt.plot(time_ax, arr[:, props[p]], alpha=.66, label=data_label)
+                plt.plot(time_ax, arr[:, props[p]], alpha=.5, label=data_label)
                 if args.final:
                     plt.plot(time_ax[-1], arr[:, props[p]][-1], 'o', ms=12, color=plt.rcParams['axes.color_cycle'][ndx % n_colors])
             if args.legend:

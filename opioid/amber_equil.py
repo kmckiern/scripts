@@ -74,11 +74,11 @@ def gen_leaprc(template_file, lig, pdb_dir, pdb_pref, job_dir, leap_dir):
     leaprc = fill_template(template_file, leap_dir, '_leaprc', rm)
     return leaprc
 
-def gen_equil(template_file, ext, job_name, leap_dir, leaprc, job_dir, script_dir, min_pref, q_0, pdb_pref, nvt_in, npt_in, equil_pref):
+def gen_equil(template_file, ext, job_name, leap_dir, leaprc, job_dir, script_dir, min_pref, q_0, pdb_pref, nvt_in, npt_in, equil_pref, gen_dir):
     # populate template variable map
     rm = {'JOBNAME': job_name, 'LEAP_DIR': leap_dir, 'LEAPRC': leaprc, 'JOB_DIR': job_dir, 'IN_DIR': script_dir, 'MIN_PREF': min_pref, 'RESTART0': q_0, 'PDB_PREF': pdb_pref, 'H1_PREF': nvt_in, 'H2_PREF': npt_in, 'EQUIL_PREF': equil_pref}
     # generate script from template
-    ec = fill_template(template_file, script_dir, ext, rm)
+    ec = fill_template(template_file, gen_dir, ext, rm)
     return ec
 
 def main():
@@ -88,7 +88,8 @@ def main():
     pd = format_path(root, 'pdbs')
     rd = format_path(root, 'rst_files')
     ld = format_path(root, 'leap_src')
-    sd = format_path(root, 'script_templates')
+    sd = format_path(root, 'static_scripts')
+    od = format_path(root, 'run_scripts')
     jr = format_path(root, 'jerbs')
 
     # pulling relevant files
@@ -117,11 +118,10 @@ def main():
         leap_template = sd + 'leaprc_c1'
         leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld)
         # gen first equilibration cycle submission script
-        ec1_template = format_paths(td, 'equil_c1.sh')
-        ec1_script = gen_leaprc(ec1_template, '_c1.sh', f + '_c1', ld, leaprc, jd, sd*, 'min', pdb_pref + '_out', pdb_pref, 'h1_nvt', 'h2_npt', 'eq1')
+        ec_template = sd + 'equil.sh'
+        ec1_script = gen_equil(ec_template, '_c1.sh', f + '_c1', ld, leaprc, jd, sd, 'min', f + '_out', f, 'h1_nvt', 'h2_npt', 'equil', od)
         # gen second equil cycle sub script
-        ec2_template = format_paths(td, 'equil_c1.sh)
-        ec2_script = gen_leaprc(ec2_template, '_c2.sh', f + '_c2', ld, leaprc, jd, sd*, 'min', 'eq1.rst', pdb_pref, 'h1_nvt', 'h2_npt', 'eq1')
+        ec2_script = gen_equil(ec_template, '_c2.sh', f + '_c2', ld, leaprc, jd, sd, 'min', 'equil.rst', f, 'h1_nvt', 'h2_npt', 'equil', od)
 
 if __name__ == '__main__':
     main()

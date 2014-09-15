@@ -12,8 +12,14 @@ moves restraint file into job dir
 generates submission scripts for each dir via this template: equil_c1.sh
 
 once those crash, it does the full equilibration process again from the restart file.
-prmtop file needs to be edited for restart file
-new submission script generated
+
+need to figure out how to update prmtop file just before the start of the second minimization.
+    try:
+    1. ambpdb to convert rst file to pdb
+    2. leap pdb to generate new inpcrd and prmtop files
+
+example usage:
+    >> ./amber_equil.py --root_dir path/to/root/dir --ligand oxy --rst --e1 --e2
 """
 
 import subprocess as subp
@@ -25,6 +31,9 @@ parser = argparse.ArgumentParser(description='Set up serial AMBER equilibration 
 parser.add_argument('--root_dir', type=str, help='Input pdb file directory')
 parser.add_argument('--ligand', type=str, help='oxy, nal, or dmt')
 parser.add_argument('--rst', action='store_true', help='Generate files for restrainted equilibration')
+parser.add_argument('--leap', action='store_true', help='Generate files for restrainted equilibration')
+parser.add_argument('--e1', action='store_true', help='Generate files for restrainted equilibration')
+parser.add_argument('--e2', action='store_true', help='Generate files for restrainted equilibration')
 opts = parser.parse_args()
 
 # this should remove inconsistancies in input path names (eg leading and trailing forward slashes)
@@ -37,9 +46,9 @@ def format_path(path_pref, append_ele=None):
     # combine formatting dir preface and pdb file preface to create job dir
     return '/' + '/'.join(pref_list) + '/'
 
+# create dir and return name
 def gen_job_dir(job_dir, pdb):
     jd = format_path(job_dir, pdb)
-    # create dir and return name
     if not os.path.exists(jd):
         os.makedirs(jd)
     return jd
@@ -52,7 +61,7 @@ def fill_template(template_file, script_destination, ext, replacement_map):
     out_file = script_destination + replacement_map['PDB_PREF'] + ext
     with open(template_file, "r") as template:
         lines = template.readlines()
-    with open(out_file, "w+") as of:
+    with open(out_file, "w") as of:
         for line in lines:
             # i thought maybe '$$' would be an unambiguous split flag.  hence, my
             # templates are written with the variables as follows: $$VAR$$
@@ -67,16 +76,16 @@ def fill_template(template_file, script_destination, ext, replacement_map):
                 of.write(line)
     return out_file
 
-def gen_leaprc(template_file, lig, pdb_dir, pdb_pref, job_dir, leap_dir):
+def gen_leaprc(template_file, lig, pdb_dir, pdb_pref, job_dir, leap_dir, rc_suffix):
     # create replacement_map using function inputs
     rm = {'LIG': lig, 'PDB_DIR': pdb_dir, 'PDB_PREF': pdb_pref, 'JOB_DIR': job_dir}
     # replace template variables with input
-    leaprc = fill_template(template_file, leap_dir, '_leaprc', rm)
+    leaprc = fill_template(template_file, leap_dir, rc_suffix, rm)
     return leaprc
 
-def gen_equil(template_file, ext, job_name, leap_dir, leaprc, job_dir, script_dir, min_pref, q_0, pdb_pref, nvt_in, npt_in, equil_pref, gen_dir):
+def gen_equil(template_file, ext, job_name, leap_dir, leaprc, job_dir, script_dir, min_pref, pdb_pref, nvt_in, npt_in, equil_pref, gen_dir, cyc_num):
     # populate template variable map
-    rm = {'JOBNAME': job_name, 'LEAP_DIR': leap_dir, 'LEAPRC': leaprc, 'JOB_DIR': job_dir, 'IN_DIR': script_dir, 'MIN_PREF': min_pref, 'RESTART0': q_0, 'PDB_PREF': pdb_pref, 'H1_PREF': nvt_in, 'H2_PREF': npt_in, 'EQUIL_PREF': equil_pref}
+    rm = {'JOB_NAME': job_name, 'LEAP_DIR': leap_dir, 'LEAPRC': leaprc, 'JOB_DIR': job_dir, 'IN_DIR': script_dir, 'MIN_PREF': min_pref, 'PDB_PREF': pdb_pref, 'H1_PREF': nvt_in, 'H2_PREF': npt_in, 'EQUIL_PREF': equil_pref, 'CYCLE_NUM': cyc_num}
     # generate script from template
     ec = fill_template(template_file, gen_dir, ext, rm)
     return ec
@@ -114,14 +123,21 @@ def main():
                 shutil.copy2(rf_path, jd)
 
         # generate all submission scripts
-        # create leaprc
-        leap_template = sd + 'leaprc_c1'
-        leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld)
+        # tleap leaprc file for this pdb
         # gen first equilibration cycle submission script
-        ec_template = sd + 'equil.sh'
-        ec1_script = gen_equil(ec_template, '_c1.sh', f + '_c1', ld, leaprc, jd, sd, 'min', f + '_out', f, 'h1_nvt', 'h2_npt', 'equil', od)
+        if opts.e1:
+            # create leaprc
+            leap_template = sd + 'leaprc_c1'
+            leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_leaprc_c1')
+            ec1_template = sd + 'equil_c1.sh'
+            ec1_script = gen_equil(ec1_template, '_c1.sh', f + '_c1', ld, leaprc, jd, sd, 'min', f, 'h1_nvt', 'h2_npt', 'equil', od, 'c1')
         # gen second equil cycle sub script
-        ec2_script = gen_equil(ec_template, '_c2.sh', f + '_c2', ld, leaprc, jd, sd, 'min', 'equil.rst', f, 'h1_nvt', 'h2_npt', 'equil', od)
+        if opts.e2:
+            # create leaprc
+            leap_template = sd + 'leaprc_c2'
+            leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_leaprc_c2')
+            ec2_template = sd + 'equil_c2.sh'
+            ec2_script = gen_equil(ec2_template, '_c2.sh', f + '_c2', ld, leaprc, jd, sd, 'min', f, 'h1_nvt', 'h2_npt', 'equil', od, 'c2')
 
 if __name__ == '__main__':
     main()

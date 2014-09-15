@@ -19,7 +19,7 @@ need to figure out how to update prmtop file just before the start of the second
     2. leap pdb to generate new inpcrd and prmtop files
 
 example usage:
-    >> ./amber_equil.py --root_dir path/to/root/dir --ligand oxy --rst --e1 --e2
+    >> ./amber_equil.py --root_dir path/to/root/dir --ligand oxy --rst --e1
 """
 
 import subprocess as subp
@@ -136,6 +136,8 @@ def main():
             # create leaprc
             leap_template = sd + 'leaprc_c2'
             leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_leaprc_c2')
+            # get the final coordinates of the restart box.
+            box_dims = subp.Popen(['tail', '-n', '1', jd + 'equil_c1.rst'], stdout=subp.PIPE).communicate()[0].split()[0:3]
             ec2_template = sd + 'equil_c2.sh'
             ec2_script = gen_equil(ec2_template, '_c2.sh', f + '_c2', ld, leaprc, jd, sd, 'min', f, 'h1_nvt', 'h2_npt', 'equil', od, 'c2')
 

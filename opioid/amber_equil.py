@@ -26,6 +26,7 @@ import subprocess as subp
 import os
 import shutil
 import argparse
+import math
 
 parser = argparse.ArgumentParser(description='Set up serial AMBER equilibration of GPCR system')
 parser.add_argument('--root_dir', type=str, help='Input pdb file directory')
@@ -76,9 +77,12 @@ def fill_template(template_file, script_destination, ext, replacement_map):
                 of.write(line)
     return out_file
 
-def gen_leaprc(template_file, lig, pdb_dir, pdb_pref, job_dir, leap_dir, rc_suffix):
+def gen_leaprc(template_file, lig, pdb_dir, pdb_pref, job_dir, leap_dir, rc_suffix, box_list=None):
     # create replacement_map using function inputs
     rm = {'LIG': lig, 'PDB_DIR': pdb_dir, 'PDB_PREF': pdb_pref, 'JOB_DIR': job_dir}
+    if box_list:
+        # get rst box dimensions.
+        rm['BOXX'], rm['BOXY'], rm['BOXZ'] = box_list
     # replace template variables with input
     leaprc = fill_template(template_file, leap_dir, rc_suffix, rm)
     return leaprc
@@ -133,11 +137,12 @@ def main():
             ec1_script = gen_equil(ec1_template, '_c1.sh', f + '_c1', ld, leaprc, jd, sd, 'min', f, 'h1_nvt', 'h2_npt', 'equil', od, 'c1')
         # gen second equil cycle sub script
         if opts.e2:
-            # create leaprc
-            leap_template = sd + 'leaprc_c2'
-            leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_leaprc_c2')
             # get the final coordinates of the restart box.
             box_dims = subp.Popen(['tail', '-n', '1', jd + 'equil_c1.rst'], stdout=subp.PIPE).communicate()[0].split()[0:3]
+            b_d = [str(int(math.ceil(float(i)))) for i in box_dims]
+            # create leaprc
+            leap_template = sd + 'leaprc_c2'
+            leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_leaprc_c2', b_d)
             ec2_template = sd + 'equil_c2.sh'
             ec2_script = gen_equil(ec2_template, '_c2.sh', f + '_c2', ld, leaprc, jd, sd, 'min', f, 'h1_nvt', 'h2_npt', 'equil', od, 'c2')
 

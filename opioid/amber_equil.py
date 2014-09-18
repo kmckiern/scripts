@@ -62,9 +62,9 @@ def fill_template(template_file, script_destination, ext, replacement_map, multi
     template_file: leaprc or bash submission script template
     replacement_map: map from template variables to simulation variables.
     """
-    out_file = script_destination + args.script_name + ext
+    out_file = script_destination + opts.script_name + ext
     if multi:
-        num_pdbs = len(replacement_map['pdb_pref'])
+        num_pdbs = len(replacement_map['PDB_PREF'])
     else:
         num_pdbs = 1
     with open(template_file, "r") as template:
@@ -76,8 +76,9 @@ def fill_template(template_file, script_destination, ext, replacement_map, multi
             l = line.split('$$')
             # if variables are present, replace them using the replacement_map
             if len(l) > 1:
-                if l[0] == 'AMB_CMD':
+                if l[1] == 'VAR_CMD':
                     l.pop(0)
+                    l.pop(1)
                     l_bk = copy.deepcopy(l)
                     # write an amber command for all pdbs given in the replacement_map
                     if num_pdbs > 1:
@@ -93,9 +94,11 @@ def fill_template(template_file, script_destination, ext, replacement_map, multi
                                     l[l.index(region)] = replacement_map[region]
                             of.write(''.join(l))
                 else:
+                    print 'here: ', l
                     for region in l:
                         if region in replacement_map:
                             l[l.index(region)] = replacement_map[region]
+                    print 'there: ', l
                     of.write(''.join(l))
             else:
                 of.write(line)
@@ -113,18 +116,18 @@ def gen_leaprc(template_file, lig, pdb_dir, pdb_pref, job_dir, leap_dir, rc_suff
 
 def gen_equil(template_file, leap_dir, leaprc, job_dir, script_dir, min_pref, pdb_pref, nvt_in, npt_in, equil_pref, gen_dir, c_val):
     ext = '_' + c_val + '.sh'
-    job_name = args.script_name
+    job_name = opts.script_name
     # populate template variable map
-    rm = {'JOB_NAME': job_name, 'LEAP_DIR': leap_dir, 'LEAPRC': leaprc, 'JOB_DIR': job_dir, 'IN_DIR': script_dir, 'MIN_PREF': min_pref, 'PDB_PREF': pdb_pref, 'H1_PREF': nvt_in, 'H2_PREF': npt_in, 'EQUIL_PREF': equil_pref, 'CYCLE_NUM': c_val}
+    rm = {'FULL_JOB_NAME': job_name, 'LEAP_DIR': leap_dir, 'LEAPRC': leaprc, 'JOB_DIR': job_dir, 'IN_DIR': script_dir, 'MIN_PREF': min_pref, 'PDB_PREF': pdb_pref, 'H1_PREF': nvt_in, 'H2_PREF': npt_in, 'EQUIL_PREF': equil_pref, 'CYCLE_NUM': c_val}
     # generate script from template
-    ec = fill_template(template_file, gen_dir, ext, rm, pdbs)
+    ec = fill_template(template_file, gen_dir, ext, rm, pdb_pref)
     return ec
 
 def main():
     # formatting paths
     # is it better to have less option typing by mandating directory name conventions?
     root = opts.root_dir
-    sub_d = args.pdb_sub_dir.strip()
+    sub_d = opts.pdb_sub_dir.strip()
     pd = format_path(root, 'pdbs/' + sub_d)
     rd = format_path(root, 'rst_files')
     ld = format_path(root, 'leap_src')
@@ -180,7 +183,7 @@ def main():
             prefs.append(f)
 
     if opts.e1:
-        ec1_template = sd + 'equil_c1.sh'
+        ec1_template = sd + 'equil_c2_cpumin_skele.sh'
         ec1_script = gen_equil(ec1_template, ld, lrc, jds, sd, 'min', prefs, 'h1_nvt', 'h2_npt', 'equil', od, 'c1')
     if opts.e2:
         ec2_template = sd + 'equil_c2.sh'

@@ -25,7 +25,10 @@ def fill_template(template_pdb, lig_coords, resname, generated_pdb):
     with open(out_file, "w") as of:
         for line in lines:
             l = line.split()
+            print 'b', l
             if resname in l:
+                print 'a', l
+                print lig_coords[l[2]]
                 l[5], l[6], l[7] = lig_coords[l[2]]
                 # hella hacky.  pdb column formatting
                 # there is definitely a better way to do this
@@ -56,7 +59,7 @@ def parse_lig(lig_pdb, resname):
     for line in open(lig_pdb, 'r'):
         l = line.split()
         if resname in l:
-            atm_coords[l[2]] = l[5:8]
+            atm_coords[l[2]] = l[-6:-3]
     return atm_coords
 
 def main():

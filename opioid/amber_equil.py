@@ -9,7 +9,7 @@ read in list of input pdbs in a given directory
 creates simulation directories for each pdb
 
 moves restraint file into job dir
-generates submission scripts for each dir via this template: equil_c1.sh
+generates submission scripts for each dir via template
 
 once those crash, it does the full equilibration process again from the restart file.
 
@@ -67,6 +67,7 @@ def fill_template(template_file, script_destination, ext, replacement_map, multi
         num_pdbs = len(replacement_map['PDB_PREF'])
     else:
         num_pdbs = 1
+    replacement_map['NUM_JOBS'] = str(num_pdbs)
     with open(template_file, "r") as template:
         lines = template.readlines()
     with open(out_file, "w") as of:
@@ -78,14 +79,18 @@ def fill_template(template_file, script_destination, ext, replacement_map, multi
             if len(l) > 1:
                 if l[1] == 'VAR_CMD':
                     l.pop(0)
-                    l.pop(1)
+                    l.pop(0)
                     l_bk = copy.deepcopy(l)
                     # write an amber command for all pdbs given in the replacement_map
                     if num_pdbs > 1:
                         for i in range(num_pdbs):
                             for region in l:
                                 if region in replacement_map:
-                                    l[l.index(region)] = replacement_map[region][i]
+                                    mapped = replacement_map[region]
+                                    if len(mapped) == 1 or isinstance(mapped, str):
+                                        l[l.index(region)] = mapped
+                                    else:
+                                        l[l.index(region)] = mapped[i]
                             of.write(''.join(l))
                             l = copy.deepcopy(l_bk)
                     else:
@@ -94,11 +99,9 @@ def fill_template(template_file, script_destination, ext, replacement_map, multi
                                     l[l.index(region)] = replacement_map[region]
                             of.write(''.join(l))
                 else:
-                    print 'here: ', l
                     for region in l:
                         if region in replacement_map:
                             l[l.index(region)] = replacement_map[region]
-                    print 'there: ', l
                     of.write(''.join(l))
             else:
                 of.write(line)

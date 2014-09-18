@@ -146,7 +146,7 @@ def main():
 
     num_files = len(pdb_files)
     # iterate over all pdbs in pdb_dir
-    for i, pdb in enumerate(pdb_files):
+    for j, pdb in enumerate(pdb_files):
         # pdb pref for output
         f = pdb.split('/')[-1].split('.pdb')[0] 
         # format a bit
@@ -175,10 +175,10 @@ def main():
             b_d = [str(int(math.ceil(float(i)))) for i in box_dims]
             # create leaprc
             leap_template = sd + 'leaprc_c2'
-            leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_leaprc_c2', b_d)
+            leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_' + f + '_leaprc_c2', b_d)
 
         # record data
-        if i == 0:
+        if j == 0:
             lrc = [leaprc]
             jds = [jd]
             prefs = [f]
@@ -189,10 +189,10 @@ def main():
 
     min_type = opts.min
     if opts.e1:
-        ec1_template = 'equil_c1_' + min_type + '.sh'
-        ec1_script = gen_equil(sd + ec1_template, ld, lrc, jds, sd, 'min', prefs, 'h1_nvt', 'h2_npt', 'equil', od, 'c1')
+        ec1_template = sd + 'equil_c1_' + min_type + '.sh'
+        ec1_script = gen_equil(ec1_template, ld, lrc, jds, sd, 'min', prefs, 'h1_nvt', 'h2_npt', 'equil', od, 'c1')
     if opts.e2:
-        ec2_template = 'equil_c2_' + min_type + '.sh'
+        ec2_template = sd + 'equil_c2_' + min_type + '.sh'
         ec2_script = gen_equil(ec2_template, ld, lrc, jds, sd, 'min', prefs, 'h1_nvt', 'h2_npt', 'equil', od, 'c2')
 
 if __name__ == '__main__':

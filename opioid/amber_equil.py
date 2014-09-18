@@ -13,8 +13,8 @@ generates submission scripts for each dir via this template: equil_c1.sh
 
 once those crash, it does the full equilibration process again from the restart file.
 
-need to figure out how to update prmtop file just before the start of the second minimization.
-    try:
+updates prmtop file just before the start of the second minimization.
+    via:
     1. ambpdb to convert rst file to pdb
     2. leap pdb to generate new inpcrd and prmtop files
 
@@ -27,10 +27,13 @@ import os
 import shutil
 import argparse
 import math
+import copy
 
 parser = argparse.ArgumentParser(description='Set up serial AMBER equilibration of GPCR system')
-parser.add_argument('--root_dir', type=str, help='Input pdb file directory')
+parser.add_argument('--root_dir', type=str, help='Input root file directory')
+parser.add_argument('--pdb_sub_dir', type=str, help='Input pdb file directory')
 parser.add_argument('--ligand', type=str, help='oxy, nal, or dmt')
+parser.add_argument('--script_name', type=str, help='Name of run script')
 parser.add_argument('--rst', action='store_true', help='Generate files for restrainted equilibration')
 parser.add_argument('--leap', action='store_true', help='Generate files for restrainted equilibration')
 parser.add_argument('--e1', action='store_true', help='Generate files for restrainted equilibration')
@@ -54,12 +57,16 @@ def gen_job_dir(job_dir, pdb):
         os.makedirs(jd)
     return jd
 
-def fill_template(template_file, script_destination, ext, replacement_map):
+def fill_template(template_file, script_destination, ext, replacement_map, multi=None):
     """
     template_file: leaprc or bash submission script template
     replacement_map: map from template variables to simulation variables.
     """
-    out_file = script_destination + replacement_map['PDB_PREF'] + ext
+    out_file = script_destination + args.script_name + ext
+    if multi:
+        num_pdbs = len(replacement_map['pdb_pref'])
+    else:
+        num_pdbs = 1
     with open(template_file, "r") as template:
         lines = template.readlines()
     with open(out_file, "w") as of:
@@ -69,10 +76,27 @@ def fill_template(template_file, script_destination, ext, replacement_map):
             l = line.split('$$')
             # if variables are present, replace them using the replacement_map
             if len(l) > 1:
-                for region in l:
-                    if region in replacement_map:
-                        l[l.index(region)] = replacement_map[region]
-                of.write(''.join(l))
+                if l[0] == 'AMB_CMD':
+                    l.pop(0)
+                    l_bk = copy.deepcopy(l)
+                    # write an amber command for all pdbs given in the replacement_map
+                    if num_pdbs > 1:
+                        for i in range(num_pdbs):
+                            for region in l:
+                                if region in replacement_map:
+                                    l[l.index(region)] = replacement_map[region][i]
+                            of.write(''.join(l))
+                            l = copy.deepcopy(l_bk)
+                    else:
+                            for region in l:
+                                if region in replacement_map:
+                                    l[l.index(region)] = replacement_map[region]
+                            of.write(''.join(l))
+                else:
+                    for region in l:
+                        if region in replacement_map:
+                            l[l.index(region)] = replacement_map[region]
+                    of.write(''.join(l))
             else:
                 of.write(line)
     return out_file
@@ -87,18 +111,21 @@ def gen_leaprc(template_file, lig, pdb_dir, pdb_pref, job_dir, leap_dir, rc_suff
     leaprc = fill_template(template_file, leap_dir, rc_suffix, rm)
     return leaprc
 
-def gen_equil(template_file, ext, job_name, leap_dir, leaprc, job_dir, script_dir, min_pref, pdb_pref, nvt_in, npt_in, equil_pref, gen_dir, cyc_num):
+def gen_equil(template_file, leap_dir, leaprc, job_dir, script_dir, min_pref, pdb_pref, nvt_in, npt_in, equil_pref, gen_dir, c_val):
+    ext = '_' + c_val + '.sh'
+    job_name = args.script_name
     # populate template variable map
-    rm = {'JOB_NAME': job_name, 'LEAP_DIR': leap_dir, 'LEAPRC': leaprc, 'JOB_DIR': job_dir, 'IN_DIR': script_dir, 'MIN_PREF': min_pref, 'PDB_PREF': pdb_pref, 'H1_PREF': nvt_in, 'H2_PREF': npt_in, 'EQUIL_PREF': equil_pref, 'CYCLE_NUM': cyc_num}
+    rm = {'JOB_NAME': job_name, 'LEAP_DIR': leap_dir, 'LEAPRC': leaprc, 'JOB_DIR': job_dir, 'IN_DIR': script_dir, 'MIN_PREF': min_pref, 'PDB_PREF': pdb_pref, 'H1_PREF': nvt_in, 'H2_PREF': npt_in, 'EQUIL_PREF': equil_pref, 'CYCLE_NUM': c_val}
     # generate script from template
-    ec = fill_template(template_file, gen_dir, ext, rm)
+    ec = fill_template(template_file, gen_dir, ext, rm, pdbs)
     return ec
 
 def main():
     # formatting paths
     # is it better to have less option typing by mandating directory name conventions?
     root = opts.root_dir
-    pd = format_path(root, 'pdbs')
+    sub_d = args.pdb_sub_dir.strip()
+    pd = format_path(root, 'pdbs/' + sub_d)
     rd = format_path(root, 'rst_files')
     ld = format_path(root, 'leap_src')
     sd = format_path(root, 'static_scripts')
@@ -109,10 +136,11 @@ def main():
     pdb_files = [p for p in os.listdir(pd) if '.pdb' in p]
     rst_files = [r for r in os.listdir(rd)]
 
+    num_files = len(pdb_files)
     # iterate over all pdbs in pdb_dir
-    for pdb in pdb_files:
+    for i, pdb in enumerate(pdb_files):
         # pdb pref for output
-        f = pdb.split('/')[-1].split('.pdb')[0]
+        f = pdb.split('/')[-1].split('.pdb')[0] 
         # format a bit
         f = f.replace('.', '_').replace('-', '_')
 
@@ -127,14 +155,11 @@ def main():
                 shutil.copy2(rf_path, jd)
 
         # generate all submission scripts
-        # tleap leaprc file for this pdb
         # gen first equilibration cycle submission script
         if opts.e1:
             # create leaprc
             leap_template = sd + 'leaprc_c1'
             leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_leaprc_c1')
-            ec1_template = sd + 'equil_c1.sh'
-            ec1_script = gen_equil(ec1_template, '_c1.sh', f + '_c1', ld, leaprc, jd, sd, 'min', f, 'h1_nvt', 'h2_npt', 'equil', od, 'c1')
         # gen second equil cycle sub script
         if opts.e2:
             # get the final coordinates of the restart box.
@@ -143,8 +168,23 @@ def main():
             # create leaprc
             leap_template = sd + 'leaprc_c2'
             leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_leaprc_c2', b_d)
-            ec2_template = sd + 'equil_c2.sh'
-            ec2_script = gen_equil(ec2_template, '_c2.sh', f + '_c2', ld, leaprc, jd, sd, 'min', f, 'h1_nvt', 'h2_npt', 'equil', od, 'c2')
+
+        # record data
+        if i == 0:
+            lrc = [leaprc]
+            jds = [jd]
+            prefs = [f]
+        else:
+            lrc.append(leaprc)
+            jds.append(jd)
+            prefs.append(f)
+
+    if opts.e1:
+        ec1_template = sd + 'equil_c1.sh'
+        ec1_script = gen_equil(ec1_template, ld, lrc, jds, sd, 'min', prefs, 'h1_nvt', 'h2_npt', 'equil', od, 'c1')
+    if opts.e2:
+        ec2_template = sd + 'equil_c2.sh'
+        ec2_script = gen_equil(ec2_template, ld, lrc, jds, sd, 'min', prefs, 'h1_nvt', 'h2_npt', 'equil', od, 'c2')
 
 if __name__ == '__main__':
     main()

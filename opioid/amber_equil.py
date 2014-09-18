@@ -34,6 +34,7 @@ parser.add_argument('--root_dir', type=str, help='Input root file directory')
 parser.add_argument('--pdb_sub_dir', type=str, help='Input pdb file directory')
 parser.add_argument('--ligand', type=str, help='oxy, nal, or dmt')
 parser.add_argument('--script_name', type=str, help='Name of run script')
+parser.add_argument('--min', type=str, help='cpu or gpu')
 parser.add_argument('--rst', action='store_true', help='Generate files for restrainted equilibration')
 parser.add_argument('--leap', action='store_true', help='Generate files for restrainted equilibration')
 parser.add_argument('--e1', action='store_true', help='Generate files for restrainted equilibration')
@@ -78,6 +79,7 @@ def fill_template(template_file, script_destination, ext, replacement_map, multi
             # if variables are present, replace them using the replacement_map
             if len(l) > 1:
                 if l[1] == 'VAR_CMD':
+                    # remove flag
                     l.pop(0)
                     l.pop(0)
                     l_bk = copy.deepcopy(l)
@@ -185,11 +187,12 @@ def main():
             jds.append(jd)
             prefs.append(f)
 
+    min_type = opts.min
     if opts.e1:
-        ec1_template = sd + 'equil_c2_cpumin_skele.sh'
-        ec1_script = gen_equil(ec1_template, ld, lrc, jds, sd, 'min', prefs, 'h1_nvt', 'h2_npt', 'equil', od, 'c1')
+        ec1_template = 'equil_c1_' + min_type + '.sh'
+        ec1_script = gen_equil(sd + ec1_template, ld, lrc, jds, sd, 'min', prefs, 'h1_nvt', 'h2_npt', 'equil', od, 'c1')
     if opts.e2:
-        ec2_template = sd + 'equil_c2.sh'
+        ec2_template = 'equil_c2_' + min_type + '.sh'
         ec2_script = gen_equil(ec2_template, ld, lrc, jds, sd, 'min', prefs, 'h1_nvt', 'h2_npt', 'equil', od, 'c2')
 
 if __name__ == '__main__':

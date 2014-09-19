@@ -111,7 +111,7 @@ def fill_template(template_file, script_destination, ext, replacement_map, multi
 
 def gen_leaprc(template_file, lig, pdb_dir, pdb_pref, job_dir, leap_dir, rc_suffix, box_list=None):
     # create replacement_map using function inputs
-    rm = {'LIG': lig, 'PDB_DIR': pdb_dir, 'PDB_PREF': pdb_pref, 'JOB_DIR': job_dir}
+    rm = {'LIG': lig.lower(), 'PDB_DIR': pdb_dir, 'PDB_PREF': pdb_pref, 'JOB_DIR': job_dir}
     if box_list:
         # get rst box dimensions.
         rm['BOXX'], rm['BOXY'], rm['BOXZ'] = box_list
@@ -170,12 +170,26 @@ def main():
             leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_leaprc_c1')
         # gen second equil cycle sub script
         if opts.e2:
-            # get the final coordinates of the restart box.
-            box_dims = subp.Popen(['tail', '-n', '1', jd + 'equil_c1.rst'], stdout=subp.PIPE).communicate()[0].split()[0:3]
-            b_d = [str(int(math.ceil(float(i)))) for i in box_dims]
-            # create leaprc
-            leap_template = sd + 'leaprc_c2'
-            leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_' + f + '_leaprc_c2', b_d)
+            # get the final coordinates of the last restart box.
+            # determine last non-empty restart file.
+            rst_files = [outf for outf in os.listdir(jd) if '.rst' in outf and os.path.getsize(jd + outf) > 0]
+            if 'equil_c1.rst' in rst_files:
+                rst_file = 'equil_c1.rst'
+            elif 'h2_npt_c1.rst' in rst_files:
+                rst_file = 'h2_npt_c1.rst'
+            elif 'h1_nvt_c1.rst' in rst_files:
+                rst_file = 'h1_nvt_c1.rst'
+            else:
+                # this is redundant but w/e
+                leap_template = sd + 'leaprc_c1'
+                leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_leaprc_c1')
+                rst_file = None
+            if rst_file:
+                box_dims = subp.Popen(['tail', '-n', '1', jd + rst_file], stdout=subp.PIPE).communicate()[0].split()[0:3]
+                b_d = [str(int(math.ceil(float(i)))) for i in box_dims]
+                # create leaprc
+                leap_template = sd + 'leaprc_c2'
+                leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_' + f + '_leaprc_c2', b_d)
 
         # record data
         if j == 0:

@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 """
 Reads in a template pdb and ligand pdb, and adds the ligand pdb to the template.
+
+example usage:
+    >> for i in *.pdb; do PREF=$(echo $i | sed 's/\.pdb//g'); python path/to/replace_lig.py --lig_pdb $i --lig_name OXY --final_pdb path/to/md/oxy_structures/s0/${PREF}_assem.pdb --t_pdb path/to/template/oxy_cyx.pdb --from_ter; done
 """
 import os
 import argparse
@@ -10,6 +13,8 @@ parser.add_argument('--t_pdb', type=str, help='template pdb')
 parser.add_argument('--lig_pdb', type=str, help='ligand pdb')
 parser.add_argument('--lig_name', type=str, help='ligand residue name')
 parser.add_argument('--final_pdb', type=str, help='final pdb name (extension optional)')
+parser.add_argument('--from_ter', action='store_true', help='if the pdb was written from one of my \'ter card\' templates')
+parser.add_argument('--from_vmd', action='store_true', help='if the pdb was written by vmd')
 args = parser.parse_args()
 
 # Take ligand coordinates, insert into template pdb, and generate filled-in pdb.
@@ -56,7 +61,10 @@ def parse_lig(lig_pdb, resname):
     for line in open(lig_pdb, 'r'):
         l = line.split()
         if resname in l:
-            atm_coords[l[2]] = l[-6:-3]
+            if args.from_ter:
+                atm_coords[l[2]] = l[-6:-3]
+            if args.from_vmd:
+                atm_coords[l[2]] = l[-5:-2]
     return atm_coords
 
 def main():

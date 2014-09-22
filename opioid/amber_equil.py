@@ -34,11 +34,11 @@ parser.add_argument('--root_dir', type=str, help='Input root file directory')
 parser.add_argument('--pdb_sub_dir', type=str, help='Input pdb file directory')
 parser.add_argument('--ligand', type=str, help='oxy, nal, or dmt')
 parser.add_argument('--script_name', type=str, help='Name of run script')
+parser.add_argument('--template', type=str, help='Name of template script')
 parser.add_argument('--min', type=str, help='cpu or gpu')
+parser.add_argument('--cyc', type=str, help='number of equilibration cycle')
 parser.add_argument('--rst', action='store_true', help='Generate files for restrainted equilibration')
 parser.add_argument('--leap', action='store_true', help='Generate files for restrainted equilibration')
-parser.add_argument('--e1', action='store_true', help='Generate files for restrainted equilibration')
-parser.add_argument('--e2', action='store_true', help='Generate files for restrainted equilibration')
 opts = parser.parse_args()
 
 # this should remove inconsistancies in input path names (eg leading and trailing forward slashes)
@@ -133,6 +133,7 @@ def main():
     # is it better to have less option typing by mandating directory name conventions?
     root = opts.root_dir
     sub_d = opts.pdb_sub_dir.strip()
+    cycle = opts.cyc
     pd = format_path(root, 'pdbs/' + sub_d)
     rd = format_path(root, 'rst_files')
     ld = format_path(root, 'leap_src')
@@ -163,33 +164,34 @@ def main():
                 shutil.copy2(rf_path, jd)
 
         # generate all submission scripts
-        # gen first equilibration cycle submission script
-        if opts.e1:
-            # create leaprc
-            leap_template = sd + 'leaprc_c1'
-            leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_leaprc_c1')
-        # gen second equil cycle sub script
-        if opts.e2:
+        # gen subsequent equil cycle sub script
+        if int(cycle) > 1:
+            er = 'equil_c' + cycle + '.rst'
+            h2r = 'h2_npt_c' + cycle + '.rst'
+            h1r = 'h1_nvt_c' + cycle + '.rst'
             # get the final coordinates of the last restart box.
             # determine last non-empty restart file.
             rst_files = [outf for outf in os.listdir(jd) if '.rst' in outf and os.path.getsize(jd + outf) > 0]
-            if 'equil_c1.rst' in rst_files:
-                rst_file = 'equil_c1.rst'
-            elif 'h2_npt_c1.rst' in rst_files:
-                rst_file = 'h2_npt_c1.rst'
-            elif 'h1_nvt_c1.rst' in rst_files:
-                rst_file = 'h1_nvt_c1.rst'
+            if er in rst_files:
+                rst_file = er
+            elif h2r in rst_files:
+                rst_file = h2r
+            elif h1r in rst_files:
+                rst_file = h1r
             else:
-                # this is redundant but w/e
-                leap_template = sd + 'leaprc_c1'
-                leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_leaprc_c1')
                 rst_file = None
+                leaprc = None
             if rst_file:
                 box_dims = subp.Popen(['tail', '-n', '1', jd + rst_file], stdout=subp.PIPE).communicate()[0].split()[0:3]
                 b_d = [str(int(math.ceil(float(i)))) for i in box_dims]
                 # create leaprc
-                leap_template = sd + 'leaprc_c2'
-                leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_' + f + '_leaprc_c2', b_d)
+                leap_template = sd + 'leaprc_c' + cycle
+                leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_' + f + '_leaprc_c' + cycle, b_d)
+        else:
+            # gen first equilibration cycle submission script
+            # create leaprc
+            leap_template = sd + 'leaprc_c1'
+            leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_' + f + '_leaprc_c1')
 
         # record data
         if j == 0:
@@ -201,13 +203,7 @@ def main():
             jds.append(jd)
             prefs.append(f)
 
-    min_type = opts.min
-    if opts.e1:
-        ec1_template = sd + 'equil_c1_' + min_type + '.sh'
-        ec1_script = gen_equil(ec1_template, ld, lrc, jds, sd, 'min', prefs, 'h1_nvt', 'h2_npt', 'equil', od, 'c1')
-    if opts.e2:
-        ec2_template = sd + 'equil_c2_' + min_type + '.sh'
-        ec2_script = gen_equil(ec2_template, ld, lrc, jds, sd, 'min', prefs, 'h1_nvt', 'h2_npt', 'equil', od, 'c2')
+    ec_script = gen_equil(sd + opts.template, ld, lrc, jds, sd, 'min', prefs, 'h1_nvt', 'h2_npt', 'equil', od, 'c' + cycle)
 
 if __name__ == '__main__':
     main()

@@ -50,25 +50,33 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
                 continue
             elif l[0] = '#|':
                 continue
+            # deuterium requires special handling
             elif scd:
-                data_dict[pi][iteration - i0][ln] = float(l[0]), float(l[3]), float(l[5])
-                if iteration == i0:
-                    ref_dict[pi][ln] = float(l[0]), float(l[3])
-                ln += 1
-                c_node += 1
-                if ln * c_node == properties[pi]:
+                if l[0] in tp:
+                    scd_temp = float(l[0])
+                    ln = 0
+                    c_node = 0
+                    continue
+                else:
+                    data_dict[pi][c_node][iteration - i0][ln] = scd_temp, float(l[1]), float(l[3])
+                    if iteration == i0:
+                        ref_dict[pi][c_node][ln] = scd_temp, float(l[0])
+                    ln += 1
+                    c_node += 1
+                if scd_temp == tp[-1] and c_node == properties[pi]:
                     scd = False
-                continue
+                    continue
             elif l[0] in tp:
                 if iteration in iter_ls:
-                    # s_cd is formatted really weirdly compared to the other properties.
+                    # s_cd is formatted really weirdly compared to the other properties
                     if pi not properties.keys()[1]:
                         data_dict[pi][iteration - i0][ln] = float(l[0]), float(l[3]), float(l[5])
                         if iteration == i0:
                             ref_dict[pi][ln] = float(l[0]), float(l[3])
-                    ln += 1
+                        ln += 1
                     else:
                         scd = True
+                        scd_temp = float(l[0])
                         continue
         else:
             # look for property flag
@@ -139,6 +147,9 @@ def main():
     rows: temperature
     columns: t, val, stdev
     depth: vals at a given temp.  only useful for s_cd
+
+    datums: dictionary, indexed by property, of calcuated property arrays from fb iterations
+    ref_data: property dict of reference data arrays
     """
     nt = len(temps)
     datums = {}

@@ -21,9 +21,11 @@ parser.add_argument('--ir', type=str, help='Range of iterations to plot.  enter 
 # parser.add_argument('--e2', action='store_true', help='Generate files for restrainted equilibration')
 opts = parser.parse_args()
 
+script_root = '/'.join(os.path.realpath(__file__).split('/')[0:-1])
+
 # currently don't feel like getting this information in a general way.
 properties = {'LipidDPPC Average Area per Lipid': 1, 'LipidDPPC Deuterium Order Parameter': 28, 'LipidDPPC Average Volume per Lipid': 1}
-property_files = 'possible_props.dat'
+property_files = script_root + '/possible_props.dat'
 
 def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
     # read and record data
@@ -48,7 +50,7 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
                 ln = 0
                 iteration += 1
                 continue
-            elif l[0] = '#|':
+            elif l[0] == '#|':
                 continue
             # deuterium requires special handling
             elif scd:
@@ -69,7 +71,7 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
             elif l[0] in tp:
                 if iteration in iter_ls:
                     # s_cd is formatted really weirdly compared to the other properties
-                    if pi not properties.keys()[1]:
+                    if pi not in properties.keys()[1]:
                         data_dict[pi][iteration - i0][ln] = float(l[0]), float(l[3]), float(l[5])
                         if iteration == i0:
                             ref_dict[pi][ln] = float(l[0]), float(l[3])
@@ -80,7 +82,7 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
                         continue
         else:
             # look for property flag
-            if l[0] = '#|':
+            if l[0] == '#|':
                 for prop in props:
                     # if property of interest is read, begin recording data
                     if prop in line:
@@ -163,7 +165,9 @@ def main():
                 datums[p].append(np.zeros(properties[p], nt, 3))
 
     # parse forcebalance output file.
-    data = parse_out(opts.of, ref_data, datums, temps, iters, props)
+    data, ref = parse_out(opts.of, ref_data, datums, temps, iters, props)
+    print 'data', data
+    print 'ref', ref
 
     # write_pref = out_data + args.pdf_name
     # gen_plots(write_pref, data_mtrxs, prop_arr, out_files)

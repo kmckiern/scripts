@@ -13,6 +13,7 @@ import shutil
 import argparse
 import math
 import copy
+import numpy as np
 
 parser = argparse.ArgumentParser(description='Parse and plot ForceBalance output data.')
 parser.add_argument('--of', type=str, help='ForceBalance out file')
@@ -36,6 +37,7 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
     iteration = 0
     ln = 0
     c_node = 0
+    boo = 0
     for line in open(fb_out, 'r'):
         # skip blank lines
         if not line.strip():
@@ -48,7 +50,10 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
                 record = False
                 pi = None
                 ln = 0
-                iteration += 1
+                boo += 1      
+                if boo == len(selected_props):
+                    boo = 0
+                    iteration += 1
                 continue
             elif l[0] == '#|':
                 continue
@@ -69,12 +74,15 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
                     scd = False
                     continue
             elif l[0] in tp:
+                print 'line: ', l, iteration, iter_ls
                 if iteration in iter_ls:
                     # s_cd is formatted really weirdly compared to the other properties
+                    print 'idk', pi
                     if pi not in properties.keys()[1]:
-                        data_dict[pi][iteration - i0][ln] = float(l[0]), float(l[3]), float(l[5])
+                        print 'idk2', pi
+                        data_dict[pi][0][iteration - i0][ln] = float(l[0]), float(l[4]), float(l[6])
                         if iteration == i0:
-                            ref_dict[pi][ln] = float(l[0]), float(l[3])
+                            ref_dict[pi][0][ln] = float(l[0]), float(l[3])
                         ln += 1
                     else:
                         scd = True
@@ -83,15 +91,18 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
         else:
             # look for property flag
             if l[0] == '#|':
-                for prop in props:
+                for prop in selected_props:
                     # if property of interest is read, begin recording data
                     if prop in line:
                         record = True
                         pi = prop
+                        print 'hmmm: ', pi
                         continue
             else:
                 continue
-    
+    print 'results? **'
+    print data_dict
+    print ref_dict 
     return data_dict, ref_dict
 
 def gen_plots(ID, data_arrays, props, file_labels):
@@ -134,11 +145,14 @@ def main():
     choices = raw_input('Which properties would you like to plot?\n' + open(property_files,'r').read() + '(separate choices using one comma)\n')
     inp = choices.split(',')
     # map user input to corresponding parsing strings
-    props = [properties.keys()[i] for i in inp]
+    props = [properties.keys()[int(i)] for i in inp]
 
     # figure out which iterations to care about
     i_init, i_final = opts.ir.split(',')
-    iters = [i for i in range(i_init, i_final)]
+    if i_init == i_final:
+        iters = [int(i_init)]
+    else:
+        iters = [i for i in range(int(i_init), int(i_final))]
     # this is temporary.  don't feel like being general
     temps = ['323.15', '333.15', '338.15', '353.15']
 
@@ -159,15 +173,13 @@ def main():
     for p in props:
         for i in iters:
             if not p in datums:
-                datums[p] = [np.zeros(properties[p], nt, 3)]
-                ref_data[p] = [np.zeros(properties[p], nt, 2)]
+                datums[p] = [np.zeros((properties[p], nt, 3))]
+                ref_data[p] = np.zeros((properties[p], nt, 2))
             else:
-                datums[p].append(np.zeros(properties[p], nt, 3))
+                datums[p].append(np.zeros((properties[p], nt, 3)))
 
     # parse forcebalance output file.
     data, ref = parse_out(opts.of, ref_data, datums, temps, iters, props)
-    print 'data', data
-    print 'ref', ref
 
     # write_pref = out_data + args.pdf_name
     # gen_plots(write_pref, data_mtrxs, prop_arr, out_files)

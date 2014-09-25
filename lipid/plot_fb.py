@@ -34,7 +34,6 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
     scd = False
     pi = None
     iteration = 0
-    ln = 0
     c_node = 0
     boo = 0
     for line in open(fb_out, 'r'):
@@ -48,7 +47,6 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
             if line.startswith('-'):
                 record = False
                 pi = None
-                ln = 0
                 c_node = 0
                 boo += 1      
                 if boo == len(selected_props):
@@ -61,6 +59,7 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
             elif scd:
                 if l[0] in tp:
                     scd_temp = float(l[0])
+                    ln = tp.index(l[0])
                     continue
                 else:
                     data_dict[pi][iteration - i0][c_node][ln] = scd_temp, float(l[1]), float(l[3])
@@ -71,18 +70,17 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
                             scd = False
                             continue
                         else:
-                            ln += 1
                             c_node = 0
                     else:
                         c_node += 1
             elif l[0] in tp:
+                ln = tp.index(l[0])
                 if iteration in iter_ls:
                     # s_cd is formatted really weirdly compared to the other properties
                     if pi not in properties.keys()[1]:
                         data_dict[pi][iteration - i0][0][ln] = float(l[0]), float(l[4]), float(l[6])
                         if iteration == i0:
                             ref_dict[pi][0][ln] = float(l[0]), float(l[3])
-                        ln += 1
                     else:
                         scd = True
                         scd_temp = float(l[0])

@@ -61,25 +61,24 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
             elif scd:
                 if l[0] in tp:
                     scd_temp = float(l[0])
-                    ln = 0
-                    c_node = 0
                     continue
                 else:
-                    data_dict[pi][c_node][iteration - i0][ln] = scd_temp, float(l[1]), float(l[3])
+                    data_dict[pi][iteration - i0][c_node][ln] = scd_temp, float(l[1]), float(l[3])
                     if iteration == i0:
                         ref_dict[pi][c_node][ln] = scd_temp, float(l[0])
-                    ln += 1
-                    c_node += 1
-                if scd_temp == tp[-1] and c_node == properties[pi]:
-                    scd = False
-                    continue
+                    if c_node == properties[pi] - 1:
+                        if scd_temp == float(tp[-1]):
+                            scd = False
+                            continue
+                        else:
+                            ln += 1
+                            c_node = 0
+                    else:
+                        c_node += 1
             elif l[0] in tp:
-                print 'line: ', l, iteration, iter_ls
                 if iteration in iter_ls:
                     # s_cd is formatted really weirdly compared to the other properties
-                    print 'idk', pi
                     if pi not in properties.keys()[1]:
-                        print 'idk2', pi
                         data_dict[pi][0][iteration - i0][ln] = float(l[0]), float(l[4]), float(l[6])
                         if iteration == i0:
                             ref_dict[pi][0][ln] = float(l[0]), float(l[3])
@@ -96,13 +95,9 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
                     if prop in line:
                         record = True
                         pi = prop
-                        print 'hmmm: ', pi
                         continue
             else:
                 continue
-    print 'results? **'
-    print data_dict
-    print ref_dict 
     return data_dict, ref_dict
 
 def gen_plots(ID, data_arrays, props, file_labels):

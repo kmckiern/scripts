@@ -19,7 +19,6 @@ parser = argparse.ArgumentParser(description='Parse and plot ForceBalance output
 parser.add_argument('--of', type=str, help='ForceBalance out file')
 parser.add_argument('--ir', type=str, help='Range of iterations to plot.  enter as follows: first,last')
 # parser.add_argument('--nt', type=int, help='Number of condensed phase temperature points')
-# parser.add_argument('--e2', action='store_true', help='Generate files for restrainted equilibration')
 opts = parser.parse_args()
 
 script_root = '/'.join(os.path.realpath(__file__).split('/')[0:-1])
@@ -50,6 +49,7 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
                 record = False
                 pi = None
                 ln = 0
+                c_node = 0
                 boo += 1      
                 if boo == len(selected_props):
                     boo = 0
@@ -79,7 +79,7 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
                 if iteration in iter_ls:
                     # s_cd is formatted really weirdly compared to the other properties
                     if pi not in properties.keys()[1]:
-                        data_dict[pi][0][iteration - i0][ln] = float(l[0]), float(l[4]), float(l[6])
+                        data_dict[pi][iteration - i0][0][ln] = float(l[0]), float(l[4]), float(l[6])
                         if iteration == i0:
                             ref_dict[pi][0][ln] = float(l[0]), float(l[3])
                         ln += 1
@@ -147,7 +147,7 @@ def main():
     if i_init == i_final:
         iters = [int(i_init)]
     else:
-        iters = [i for i in range(int(i_init), int(i_final))]
+        iters = [i for i in range(int(i_init), int(i_final) + 1)]
     # this is temporary.  don't feel like being general
     temps = ['323.15', '333.15', '338.15', '353.15']
 

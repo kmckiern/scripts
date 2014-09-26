@@ -115,11 +115,14 @@ def gen_plots(ID, data_arrays, props, file_labels):
                 else:
                     time_ax = np.array(arr[:, props['TIME(PS)']])
                 data_label = file_labels[ndx].split('/')[-1].split('.')[0]
+                # if 'equil' in data_label:
+                #    plt.plot(time_ax[:300], arr[:, props[p]][:300], alpha=.5, label=data_label)
+                # else:
                 plt.plot(time_ax, arr[:, props[p]], alpha=.5, label=data_label)
                 if args.final:
                     plt.plot(time_ax[-1], arr[:, props[p]][-1], 'o', ms=12, color=plt.rcParams['axes.color_cycle'][ndx % n_colors])
             if args.legend:
-                plt.legend(prop={'size':6})
+                plt.legend(prop={'size':6}, loc=4)
             pdfs.savefig()
             plt.clf()
     pdfs.close()

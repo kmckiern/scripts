@@ -1,10 +1,14 @@
 #!/usr/bin/env python
+
 """
 Reads in a template pdb and ligand pdb, and adds the ligand pdb to the template.
 
 example usage:
-    >> for i in *.pdb; do PREF=$(echo $i | sed 's/\.pdb//g'); python path/to/replace_lig.py --lig_pdb $i --lig_name OXY --final_pdb path/to/md/oxy_structures/s0/${PREF}_assem.pdb --t_pdb path/to/template/oxy_cyx.pdb --from_ter; done
+    >> for i in *pdb; do PREF=$(pref $i); python opioid/replace_lig.py --lig_pdb ${i} --lig_name OXY --final_pdb opioid/md/oxy_structures/${PREF}_assem.pdb --t_pdb opioid/mu_lig_mem_structures/oxy_cyx.pdb --from_ter; done
+or
+    >> ./replace_lig.py --t_pdb /md/oxy_structures/s0/s00_l18_assem.pdb --lig_pdb /md/oxy_structures/s0/mod.pdb --lig_name OXY --final_pdb /md/oxy_structures/s0/s0l18.pdb
 """
+
 import os
 import argparse
 

@@ -101,7 +101,7 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
                 continue
     return data_dict, ref_dict
 
-def gen_plots(ID, data_arrs, ref_arrs, props, iter_ls):
+def gen_plots(ID, data_arrs, ref_arrs, props, iter_ls, tp):
     '''
     ID: for naming the PDF
     data_arrays: time series matrices for all properties
@@ -115,21 +115,31 @@ def gen_plots(ID, data_arrs, ref_arrs, props, iter_ls):
     for p in props:
         plt.ylabel(p)
         plt.grid(True)
+        # plot s_cd by carbon node
         if properties.keys()[1] in p:
-            """
-            plt.xlabel('hc node')
+            plt.figure(1)
+            # iterate over iterations...
             for itr, arr in enumerate(data_arrs[p]):
-            """
-            continue
+                # nodes
+                for cn, ds in enumerate(arr):
+                    # temperature points
+                    for t, temp in enumerate(tp):
+                        plt.subplot(22t)
+                        plt.title(temp)
+                        plt.xlabel('hc node')
+                        
+                        
+                    plt.plot(cn, ds[]
+                    c_nodes = 
         else:
             plt.xlabel('T / K')
-            plt.plot(ref_arrs[p][0][:,1], ref_arrs[p][0][:,1], 'ks', label='experiment')
             for itr, arr in enumerate(data_arrs[p]):
                 data_label = 'iteration ' + str(iter_ls[itr])
                 temp = arr[0][:,0]
                 vals = arr[0][:,1]
                 plt.plot(temp, vals, 'o', alpha = .75, label=data_label)
             plt.legend(prop={'size':6}, loc=4)
+            plt.plot(temp, ref_arrs[p][0][:,1], 'ks', label='experiment')
         pdfs.savefig()
         plt.clf()
     pdfs.close()
@@ -176,7 +186,7 @@ def main():
     data, ref = parse_out(opts.of, ref_data, datums, temps, iters, props)
     print 'data', data
 
-    gen_plots(opts.pdf_out, datums, ref_data, props, iters)
+    gen_plots(opts.pdf_out, datums, ref_data, props, temps, iters)
 
 if __name__ == '__main__':
     main()

@@ -7,17 +7,16 @@ example usage:
     >> ./amber_equil.py --root_dir path/to/root/dir --ligand oxy --rst --e1
 """
 
-import subprocess as subp
 import os
-import shutil
 import argparse
-import math
-import copy
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
 parser = argparse.ArgumentParser(description='Parse and plot ForceBalance output data.')
 parser.add_argument('--of', type=str, help='ForceBalance out file')
 parser.add_argument('--ir', type=str, help='Range of iterations to plot.  enter as follows: first,last')
+parser.add_argument('--pdf_out', type=str, help='PDF out file name')
 # parser.add_argument('--nt', type=int, help='Number of condensed phase temperature points')
 opts = parser.parse_args()
 
@@ -80,7 +79,11 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
                     if pi not in properties.keys()[1]:
                         data_dict[pi][iteration - i0][0][ln] = float(l[0]), float(l[4]), float(l[6])
                         if iteration == i0:
-                            ref_dict[pi][0][ln] = float(l[0]), float(l[3])
+                            # don't record the exp data with zero weight
+                            if abs(float(l[8])) < 1e-9:
+                                ref_dict[pi][0][ln] = float(l[0]), np.NAN
+                            else:
+                                ref_dict[pi][0][ln] = float(l[0]), float(l[3])
                     else:
                         scd = True
                         scd_temp = float(l[0])
@@ -98,39 +101,37 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
                 continue
     return data_dict, ref_dict
 
-def gen_plots(ID, data_arrays, props, file_labels):
+def gen_plots(ID, data_arrs, ref_arrs, props, iter_ls):
     '''
-    ID: for naming the PDF.
-    data_arrays: time series matrix for all files.
-    props: list of properties we wish to plot.
-    file_labels: file names (for legend).
+    ID: for naming the PDF
+    data_arrays: time series matrices for all properties
+    ref_arr: experiemental data
+    props: list of properties we wish to plot
+    iter_ls: list of iterations to plot
     '''
     # Pull trj time information.
     pdfs = PdfPages(ID + '.pdf')
+    n_colors = len(plt.rcParams['axes.color_cycle'])
     for p in props:
-        if p in ('TIME(PS)', 'NSTEP', 'EHBOND'):
+        plt.ylabel(p)
+        plt.grid(True)
+        if properties.keys()[1] in p:
+            """
+            plt.xlabel('hc node')
+            for itr, arr in enumerate(data_arrs[p]):
+            """
             continue
         else:
-            n_colors = len(plt.rcParams['axes.color_cycle'])
-            plt.ylabel(p)
-            plt.xlabel('t / ps')
-            plt.grid(True)
-            for ndx, arr in enumerate(data_arrays):
-                if args.min:
-                    time_ax = np.array(arr[:, props['NSTEP']])
-                else:
-                    time_ax = np.array(arr[:, props['TIME(PS)']])
-                data_label = file_labels[ndx].split('/')[-1].split('.')[0]
-                # if 'equil' in data_label:
-                #    plt.plot(time_ax[:300], arr[:, props[p]][:300], alpha=.5, label=data_label)
-                # else:
-                plt.plot(time_ax, arr[:, props[p]], alpha=.5, label=data_label)
-                if args.final:
-                    plt.plot(time_ax[-1], arr[:, props[p]][-1], 'o', ms=12, color=plt.rcParams['axes.color_cycle'][ndx % n_colors])
-            if args.legend:
-                plt.legend(prop={'size':6}, loc=4)
-            pdfs.savefig()
-            plt.clf()
+            plt.xlabel('T / K')
+            plt.plot(ref_arrs[p][0][:,1], ref_arrs[p][0][:,1], 'ks', label='experiment')
+            for itr, arr in enumerate(data_arrs[p]):
+                data_label = 'iteration ' + str(iter_ls[itr])
+                temp = arr[0][:,0]
+                vals = arr[0][:,1]
+                plt.plot(temp, vals, 'o', alpha = .75, label=data_label)
+            plt.legend(prop={'size':6}, loc=4)
+        pdfs.savefig()
+        plt.clf()
     pdfs.close()
 
 def main():
@@ -173,9 +174,9 @@ def main():
 
     # parse forcebalance output file.
     data, ref = parse_out(opts.of, ref_data, datums, temps, iters, props)
+    print 'data', data
 
-    # write_pref = out_data + args.pdf_name
-    # gen_plots(write_pref, data_mtrxs, prop_arr, out_files)
+    gen_plots(opts.pdf_out, datums, ref_data, props, iters)
 
 if __name__ == '__main__':
     main()

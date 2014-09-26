@@ -24,6 +24,8 @@ script_root = '/'.join(os.path.realpath(__file__).split('/')[0:-1])
 
 # currently don't feel like getting this information in a general way.
 properties = {'LipidDPPC Average Area per Lipid': 1, 'LipidDPPC Deuterium Order Parameter': 28, 'LipidDPPC Average Volume per Lipid': 1}
+scd_key = properties.keys()[1]
+scd_val = properties[scd_key]
 property_files = script_root + '/possible_props.dat'
 
 def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
@@ -33,7 +35,7 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
     scd = False
     pi = None
     iteration = 0
-    c_node = 0
+    ln = 0
     boo = 0
     for line in open(fb_out, 'r'):
         # skip blank lines
@@ -46,7 +48,7 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
             if line.startswith('-'):
                 record = False
                 pi = None
-                c_node = 0
+                ln = 0
                 boo += 1      
                 if boo == len(selected_props):
                     boo = 0
@@ -58,25 +60,25 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
             elif scd:
                 if l[0] in tp:
                     scd_temp = float(l[0])
-                    ln = tp.index(l[0])
                     continue
                 else:
-                    data_dict[pi][iteration - i0][c_node][ln] = scd_temp, float(l[1]), float(l[3])
+                    data_dict[pi][iteration - i0][t][ln][1:] = float(l[1]), float(l[3])
+                    print data_dict[pi][iteration - i0][t][ln]
                     if iteration == i0:
-                        ref_dict[pi][c_node][ln] = scd_temp, float(l[0])
-                    if c_node == properties[pi] - 1:
+                        ref_dict[pi][t][ln][1:] = float(l[0])
+                    if ln == properties[pi] - 1:
                         if scd_temp == float(tp[-1]):
                             scd = False
                             continue
                         else:
-                            c_node = 0
+                            ln = 0
                     else:
-                        c_node += 1
+                        ln += 1
             elif l[0] in tp:
                 ln = tp.index(l[0])
                 if iteration in iter_ls:
                     # s_cd is formatted really weirdly compared to the other properties
-                    if pi not in properties.keys()[1]:
+                    if pi not in scd_key:
                         data_dict[pi][iteration - i0][0][ln] = float(l[0]), float(l[4]), float(l[6])
                         if iteration == i0:
                             # don't record the exp data with zero weight
@@ -87,6 +89,7 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
                     else:
                         scd = True
                         scd_temp = float(l[0])
+                        t = tp.index(l[0])
                         continue
         else:
             # look for property flag
@@ -116,7 +119,8 @@ def gen_plots(ID, data_arrs, ref_arrs, props, iter_ls, tp):
         plt.ylabel(p)
         plt.grid(True)
         # plot s_cd by carbon node
-        if properties.keys()[1] in p:
+        if scd_key in p:
+            """
             plt.figure(1)
             # iterate over iterations...
             for itr, arr in enumerate(data_arrs[p]):
@@ -131,6 +135,8 @@ def gen_plots(ID, data_arrs, ref_arrs, props, iter_ls, tp):
                         
                     plt.plot(cn, ds[]
                     c_nodes = 
+            """
+            continue
         else:
             plt.xlabel('T / K')
             for itr, arr in enumerate(data_arrs[p]):
@@ -159,6 +165,8 @@ def main():
         iters = [i for i in range(int(i_init), int(i_final) + 1)]
     # this is temporary.  don't feel like being general
     temps = ['323.15', '333.15', '338.15', '353.15']
+    
+    c_nodes = np.arange(scd_val)
 
     """
     build data dictionary
@@ -177,16 +185,28 @@ def main():
     for p in props:
         for i in iters:
             if not p in datums:
-                datums[p] = [np.zeros((properties[p], nt, 3))]
-                ref_data[p] = np.zeros((properties[p], nt, 2))
+                if scd_key in p:
+                    datums[p] = [np.zeros((nt, properties[p], 3))]
+                    ref_data[p] = np.zeros((nt, properties[p], 2))
+                else:
+                    datums[p] = [np.zeros((properties[p], nt, 3))]
+                    ref_data[p] = np.zeros((properties[p], nt, 2))
             else:
-                datums[p].append(np.zeros((properties[p], nt, 3)))
+                if scd_key in p:
+                    datums[p].append(np.zeros((nt, properties[p], 3)))
+                else:
+                    datums[p].append(np.zeros((properties[p], nt, 3)))
+
+    if scd_key in datums:
+        for itr in datums[scd_key]:
+            for temp in itr:
+                temp[:,0] = c_nodes
 
     # parse forcebalance output file.
     data, ref = parse_out(opts.of, ref_data, datums, temps, iters, props)
-    print 'data', data
+    print 'data scd', data[scd_key]
 
-    gen_plots(opts.pdf_out, datums, ref_data, props, temps, iters)
+    # gen_plots(opts.pdf_out, datums, ref_data, props, temps, iters)
 
 if __name__ == '__main__':
     main()

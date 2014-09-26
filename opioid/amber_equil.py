@@ -134,6 +134,8 @@ def main():
     root = opts.root_dir
     sub_d = opts.pdb_sub_dir.strip()
     cycle = opts.cyc
+    pcycle = str(int(opts.cyc)-1)
+
     pd = format_path(root, 'pdbs/' + sub_d)
     rd = format_path(root, 'rst_files')
     ld = format_path(root, 'leap_src')
@@ -143,7 +145,7 @@ def main():
 
     # pulling relevant files
     pdb_files = [p for p in os.listdir(pd) if '.pdb' in p]
-    rst_files = [r for r in os.listdir(rd)]
+    restraint_files = [r for r in os.listdir(rd)]
 
     num_files = len(pdb_files)
     # iterate over all pdbs in pdb_dir
@@ -159,16 +161,16 @@ def main():
         # setup directory
         if opts.rst:
             # move restraint file
-            for rf in rst_files:
+            for rf in restraint_files:
                 rf_path = rd + rf
                 shutil.copy2(rf_path, jd)
 
         # generate all submission scripts
         # gen subsequent equil cycle sub script
         if int(cycle) > 1:
-            er = 'equil_c' + cycle + '.rst'
-            h2r = 'h2_npt_c' + cycle + '.rst'
-            h1r = 'h1_nvt_c' + cycle + '.rst'
+            er = 'equil_c' + pcycle + '.rst'
+            h2r = 'h2_npt_c' + pcycle + '.rst'
+            h1r = 'h1_nvt_c' + pcycle + '.rst'
             # get the final coordinates of the last restart box.
             # determine last non-empty restart file.
             rst_files = [outf for outf in os.listdir(jd) if '.rst' in outf and os.path.getsize(jd + outf) > 0]

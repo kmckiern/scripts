@@ -60,10 +60,10 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
             elif scd:
                 if l[0] in tp:
                     scd_temp = float(l[0])
+                    t = tp.index(l[0])
                     continue
                 else:
                     data_dict[pi][iteration - i0][t][ln][1:] = float(l[1]), float(l[3])
-                    print data_dict[pi][iteration - i0][t][ln]
                     if iteration == i0:
                         ref_dict[pi][t][ln][1:] = float(l[0])
                     if ln == properties[pi] - 1:
@@ -204,7 +204,6 @@ def main():
 
     # parse forcebalance output file.
     data, ref = parse_out(opts.of, ref_data, datums, temps, iters, props)
-    print 'data scd', data[scd_key]
 
     # gen_plots(opts.pdf_out, datums, ref_data, props, temps, iters)
 

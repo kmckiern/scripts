@@ -136,6 +136,7 @@ def gen_plots(ID, data_arrs, ref_arrs, props, iter_ls, tp):
                 data_label = 'i' + str(iter_ls[itr])
                 x = arr[d][:,0]
                 vals = arr[d][:,1]
+                y_err = arr[d][:,2]
                 if scd_key == p:
                     plt.subplot(2, 2, d)
                     if itr == 0:
@@ -146,7 +147,8 @@ def gen_plots(ID, data_arrs, ref_arrs, props, iter_ls, tp):
                     plt.xlim([min(x)-x_buff, max(x)+x_buff])
                 if itr == 0:
                     plt.plot(x, ref_arrs[p][d][:,1], 'ko', label='exp')
-                plt.plot(x, vals, 'D', alpha = .75, label=data_label)
+                plt.plot(x, vals, 'D', alpha=.75, label=data_label)
+                plt.errorbar(x, vals, yerr=y_err, fmt=None, color='r')
         plt.legend(prop={'size':6}, loc=4)
         pdfs.savefig()
         plt.clf()

@@ -70,8 +70,8 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
                     data_dict[pi][iteration - i0][t][ln][1:] = float(l[1]), float(l[3])
                     if iteration == i0:
                         # hacky.  dk how to be general for this one...
-                        if t == '333.15':
-                            ref_dict[pi][t][ln][1:] = float(l[0]), np.NAN
+                        if tp[t] == '333.15':
+                            ref_dict[pi][t][ln][1:] = np.NAN
                         else:
                             ref_dict[pi][t][ln][1:] = float(l[0])
                     if ln == properties[pi] - 1:
@@ -145,7 +145,7 @@ def gen_plots(ID, data_arrs, ref_arrs, props, iter_ls, tp):
                     x_buff = buffer(x)
                     plt.xlim([min(x)-x_buff, max(x)+x_buff])
                 if itr == 0:
-                    plt.plot(x, ref_arrs[p][0][:,1], 'ko', label='experiment')
+                    plt.plot(x, ref_arrs[p][d][:,1], 'ko', label='exp')
                 plt.plot(x, vals, 'D', alpha = .75, label=data_label)
         plt.legend(prop={'size':6}, loc=4)
         pdfs.savefig()

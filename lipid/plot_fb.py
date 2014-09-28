@@ -119,24 +119,18 @@ def gen_plots(ID, data_arrs, ref_arrs, props, iter_ls, tp):
         plt.ylabel(p)
         plt.grid(True)
         # plot s_cd by carbon node
-        if scd_key in p:
-            """
+        if scd_key == p:
             plt.figure(1)
-            # iterate over iterations...
             for itr, arr in enumerate(data_arrs[p]):
-                # nodes
-                for cn, ds in enumerate(arr):
-                    # temperature points
-                    for t, temp in enumerate(tp):
-                        plt.subplot(22t)
-                        plt.title(temp)
-                        plt.xlabel('hc node')
-                        
-                        
-                    plt.plot(cn, ds[]
-                    c_nodes = 
-            """
-            continue
+                for d in range(arr.shape[0]):
+                    plt.subplot(2, 2, d)
+                    data_label = 'iteration ' + str(iter_ls[itr])
+                    cn = arr[d][:,0]
+                    vals = arr[d][:,1]
+                    plt.title(temp[d])
+                    plt.plot(cn, ref_arrs[p][0][:,1], 'ks', label='experiment')
+                    plt.plot(cn, vals, 'o', alpha = .75, label=data_label)
+            plt.xlabel('hc node')
         else:
             plt.xlabel('T / K')
             for itr, arr in enumerate(data_arrs[p]):
@@ -197,6 +191,7 @@ def main():
                 else:
                     datums[p].append(np.zeros((properties[p], nt, 3)))
 
+    # carbon nodes are always arranged successively
     if scd_key in datums:
         for itr in datums[scd_key]:
             for temp in itr:
@@ -205,7 +200,8 @@ def main():
     # parse forcebalance output file.
     data, ref = parse_out(opts.of, ref_data, datums, temps, iters, props)
 
-    # gen_plots(opts.pdf_out, datums, ref_data, props, temps, iters)
+    # plot da data
+    gen_plots(opts.pdf_out, datums, ref_data, props, temps, iters)
 
 if __name__ == '__main__':
     main()

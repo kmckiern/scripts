@@ -69,7 +69,11 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
                 else:
                     data_dict[pi][iteration - i0][t][ln][1:] = float(l[1]), float(l[3])
                     if iteration == i0:
-                        ref_dict[pi][t][ln][1:] = float(l[0])
+                        # hacky.  dk how to be general for this one...
+                        if t == '333.15':
+                            ref_dict[pi][t][ln][1:] = float(l[0]), np.NAN
+                        else:
+                            ref_dict[pi][t][ln][1:] = float(l[0])
                     if ln == properties[pi] - 1:
                         if scd_temp == float(tp[-1]):
                             scd = False
@@ -108,6 +112,9 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
                 continue
     return data_dict, ref_dict
 
+def buffer(arr):
+    return 2*(max(arr) - min(arr))/len(arr)
+
 def gen_plots(ID, data_arrs, ref_arrs, props, iter_ls, tp):
     '''
     ID: for naming the PDF
@@ -121,11 +128,12 @@ def gen_plots(ID, data_arrs, ref_arrs, props, iter_ls, tp):
     # n_colors = len(plt.rcParams['axes.color_cycle'])
     for p in props:
         plt.grid(True)
+        plt.margins(.1)
         plt.ylabel(p)
         plt.xlabel('T / K')
         for itr, arr in enumerate(data_arrs[p]):
             for d in range(arr.shape[0]):
-                data_label = 'iteration ' + str(iter_ls[itr])
+                data_label = 'i' + str(iter_ls[itr])
                 x = arr[d][:,0]
                 vals = arr[d][:,1]
                 if scd_key == p:
@@ -134,9 +142,11 @@ def gen_plots(ID, data_arrs, ref_arrs, props, iter_ls, tp):
                         plt.title(tp[d])
                         if d == 0:
                             plt.figure(1)
+                    x_buff = buffer(x)
+                    plt.xlim([min(x)-x_buff, max(x)+x_buff])
                 if itr == 0:
-                    plt.plot(x, ref_arrs[p][0][:,1], 'ks', label='experiment')
-                plt.plot(x, vals, 'o', alpha = .75, label=data_label)
+                    plt.plot(x, ref_arrs[p][0][:,1], 'ko', label='experiment')
+                plt.plot(x, vals, 'D', alpha = .75, label=data_label)
         plt.legend(prop={'size':6}, loc=4)
         pdfs.savefig()
         plt.clf()

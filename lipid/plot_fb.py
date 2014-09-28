@@ -10,6 +10,7 @@ example usage:
 import os
 import argparse
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -27,6 +28,9 @@ properties = {'LipidDPPC Average Area per Lipid': 1, 'LipidDPPC Deuterium Order 
 scd_key = properties.keys()[1]
 scd_val = properties[scd_key]
 property_files = script_root + '/possible_props.dat'
+
+# plot configs
+matplotlib.rcParams.update({'font.size': 8})
 
 def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
     # read and record data
@@ -114,32 +118,26 @@ def gen_plots(ID, data_arrs, ref_arrs, props, iter_ls, tp):
     '''
     # Pull trj time information.
     pdfs = PdfPages(ID + '.pdf')
-    n_colors = len(plt.rcParams['axes.color_cycle'])
+    # n_colors = len(plt.rcParams['axes.color_cycle'])
     for p in props:
-        plt.ylabel(p)
         plt.grid(True)
-        # plot s_cd by carbon node
-        if scd_key == p:
-            plt.figure(1)
-            for itr, arr in enumerate(data_arrs[p]):
-                for d in range(arr.shape[0]):
-                    plt.subplot(2, 2, d)
-                    data_label = 'iteration ' + str(iter_ls[itr])
-                    cn = arr[d][:,0]
-                    vals = arr[d][:,1]
-                    plt.title(temp[d])
-                    plt.plot(cn, ref_arrs[p][0][:,1], 'ks', label='experiment')
-                    plt.plot(cn, vals, 'o', alpha = .75, label=data_label)
-            plt.xlabel('hc node')
-        else:
-            plt.xlabel('T / K')
-            for itr, arr in enumerate(data_arrs[p]):
+        plt.ylabel(p)
+        plt.xlabel('T / K')
+        for itr, arr in enumerate(data_arrs[p]):
+            for d in range(arr.shape[0]):
                 data_label = 'iteration ' + str(iter_ls[itr])
-                temp = arr[0][:,0]
-                vals = arr[0][:,1]
-                plt.plot(temp, vals, 'o', alpha = .75, label=data_label)
-            plt.legend(prop={'size':6}, loc=4)
-            plt.plot(temp, ref_arrs[p][0][:,1], 'ks', label='experiment')
+                x = arr[d][:,0]
+                vals = arr[d][:,1]
+                if scd_key == p:
+                    plt.subplot(2, 2, d)
+                    if itr == 0:
+                        plt.title(tp[d])
+                        if d == 0:
+                            plt.figure(1)
+                if itr == 0:
+                    plt.plot(x, ref_arrs[p][0][:,1], 'ks', label='experiment')
+                plt.plot(x, vals, 'o', alpha = .75, label=data_label)
+        plt.legend(prop={'size':6}, loc=4)
         pdfs.savefig()
         plt.clf()
     pdfs.close()
@@ -201,7 +199,7 @@ def main():
     data, ref = parse_out(opts.of, ref_data, datums, temps, iters, props)
 
     # plot da data
-    gen_plots(opts.pdf_out, datums, ref_data, props, temps, iters)
+    gen_plots(opts.pdf_out, datums, ref_data, props, iters, temps)
 
 if __name__ == '__main__':
     main()

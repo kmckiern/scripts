@@ -4,7 +4,7 @@
 This script parses a forcebalance output file and plots the data.
 
 example usage:
-    >> ./amber_equil.py --root_dir path/to/root/dir --ligand oxy --rst --e1
+    >> ./plot_fb.py --of optimize.out --ir 0,1 --pdf_out filename
 """
 
 import os

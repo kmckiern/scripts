@@ -197,22 +197,20 @@ def main():
         for i in iters:
             if not p in datums:
                 if scd_key in p:
-                    init_datum = np.empty((nt, properties[p], 3))
+                    init_datum = [np.empty((nt, properties[p], 3))]
                     init_ref = np.empty((nt, properties[p], 2))
                 else:
-                    init_datum = np.empty((properties[p], nt, 3))
+                    init_datum = [np.empty((properties[p], nt, 3))]
                     init_ref = np.empty((properties[p], nt, 2))
-                init_datum[:] = np.nan
+                init_datum[0][:] = np.nan
                 init_ref[:] = np.nan
             else:
                 if scd_key in p:
                     datum = np.empty((nt, properties[p], 3))
-                    datum[:] = np.nan
-                    datums[p].append(datum)
                 else:
                     datum = np.empty((properties[p], nt, 3))
-                    datum[:] = np.nan
-                    datums[p].append(datum)
+                datum[:] = np.nan
+                datums[p].append(datum)
 
     # carbon nodes are always arranged successively
     if scd_key in datums:

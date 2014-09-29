@@ -21,6 +21,8 @@ parser = argparse.ArgumentParser(description='Parse and plot ForceBalance output
 parser.add_argument('--of', type=str, help='ForceBalance out file')
 parser.add_argument('--ir', type=str, help='Range of iterations to plot.  enter as follows: first,last')
 parser.add_argument('--pdf_out', type=str, help='PDF out file name')
+parser.add_argument('--multi', type=str, help='List of out files to pull iteration data from')
+parser.add_argument('--corres_iters', type=str, help='Iterations to pull from multiple files (lists are respective)')
 # parser.add_argument('--nt', type=int, help='Number of condensed phase temperature points')
 opts = parser.parse_args()
 
@@ -147,7 +149,7 @@ def gen_plots(ID, data_arrs, ref_arrs, props, iter_ls, tp):
                         plt.title(tp[d])
                     x_buff = buffer(x)
                     plt.xlim([min(x)-x_buff, max(x)+x_buff])
-                    plt.ylim([0, 0.24])
+                    plt.ylim([0, 0.30])
                 else:
                     lg = 4
                 if itr == 0:
@@ -195,16 +197,22 @@ def main():
         for i in iters:
             if not p in datums:
                 if scd_key in p:
-                    datums[p] = [np.zeros((nt, properties[p], 3))]
-                    ref_data[p] = np.zeros((nt, properties[p], 2))
+                    init_datum = np.empty((nt, properties[p], 3))
+                    init_ref = np.empty((nt, properties[p], 2))
                 else:
-                    datums[p] = [np.zeros((properties[p], nt, 3))]
-                    ref_data[p] = np.zeros((properties[p], nt, 2))
+                    init_datum = np.empty((properties[p], nt, 3))
+                    init_ref = np.empty((properties[p], nt, 2))
+                init_datum[:] = np.nan
+                init_ref[:] = np.nan
             else:
                 if scd_key in p:
-                    datums[p].append(np.zeros((nt, properties[p], 3)))
+                    datum = np.empty((nt, properties[p], 3))
+                    datum[:] = np.nan
+                    datums[p].append(datum)
                 else:
-                    datums[p].append(np.zeros((properties[p], nt, 3)))
+                    datum = np.empty((properties[p], nt, 3))
+                    datum[:] = np.nan
+                    datums[p].append(datum)
 
     # carbon nodes are always arranged successively
     if scd_key in datums:

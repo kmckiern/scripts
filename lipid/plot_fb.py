@@ -3,6 +3,9 @@
 """
 This script parses a forcebalance output file and plots the data.
 
+for the future - be able to pick an iteration from an arb outfile.
+    legend displays filename and iteration number
+
 example usage:
     >> ./plot_fb.py --of optimize.out --ir 0,1 --pdf_out filename
 """
@@ -138,18 +141,20 @@ def gen_plots(ID, data_arrs, ref_arrs, props, iter_ls, tp):
                 vals = arr[d][:,1]
                 y_err = arr[d][:,2]
                 if scd_key == p:
-                    plt.subplot(2, 2, d)
+                    plt.subplot(len(tp)/2, 2, d)
+                    lg = 3
                     if itr == 0:
                         plt.title(tp[d])
-                        if d == 0:
-                            plt.figure(1)
                     x_buff = buffer(x)
                     plt.xlim([min(x)-x_buff, max(x)+x_buff])
+                    plt.ylim([0, 0.24])
+                else:
+                    lg = 4
                 if itr == 0:
-                    plt.plot(x, ref_arrs[p][d][:,1], 'ko', label='exp')
-                plt.plot(x, vals, 'D', alpha=.75, label=data_label)
-                plt.errorbar(x, vals, yerr=y_err, fmt=None, color='r')
-        plt.legend(prop={'size':6}, loc=4)
+                    plt.plot(x, ref_arrs[p][d][:,1], 'ko', markersize=6, label='exp')
+                plt.plot(x, vals, 'D-', alpha=.66, markersize=4, label=data_label)
+                # plt.errorbar(x, vals, yerr=y_err, fmt=None, color='r')
+        plt.legend(prop={'size':6}, loc=lg)
         pdfs.savefig()
         plt.clf()
     pdfs.close()

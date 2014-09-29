@@ -197,13 +197,13 @@ def main():
         for i in iters:
             if not p in datums:
                 if scd_key in p:
-                    init_datum = [np.empty((nt, properties[p], 3))]
-                    init_ref = np.empty((nt, properties[p], 2))
+                    datums = [np.empty((nt, properties[p], 3))]
+                    ref_data = np.empty((nt, properties[p], 2))
                 else:
-                    init_datum = [np.empty((properties[p], nt, 3))]
-                    init_ref = np.empty((properties[p], nt, 2))
-                init_datum[0][:] = np.nan
-                init_ref[:] = np.nan
+                    datums = [np.empty((properties[p], nt, 3))]
+                    ref_data = np.empty((properties[p], nt, 2))
+                datums[0][:] = np.nan
+                ref_data[:] = np.nan
             else:
                 if scd_key in p:
                     datum = np.empty((nt, properties[p], 3))

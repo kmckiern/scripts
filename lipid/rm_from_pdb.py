@@ -10,7 +10,7 @@ import argparse
 import os
 import mdtraj
 
-parser = argparse.ArgumentParser(description='Parse and plot ForceBalance output data.')
+parser = argparse.ArgumentParser(description='remove atoms in rf from pdb and write to pdb_o')
 parser.add_argument('--rf', type=str, help='file of atomnames to remove')
 parser.add_argument('--pdb', type=str, help='pdb file')
 parser.add_argument('--pdb_o', type=str, help='name of output pdb file')

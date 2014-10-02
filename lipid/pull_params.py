@@ -33,7 +33,7 @@ def main():
     # iterate over parameter categories
     p_cats = ff_categories.keys()
     for p_type in p_cats:
-        data = subp.Popen(['grep', '-A', str(gg_categories[p_type]), ptype, path + '*'], stdout=subp.PIPE).communicate()[0])
+        data = subp.Popen(['grep', '-A', str(ff_categories[p_type]), ptype, path + '*'], stdout=subp.PIPE).communicate()[0]
         print 'mer', data
 
 if __name__ == '__main__':

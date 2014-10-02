@@ -24,25 +24,45 @@ def main():
     uniq_atms = set(atms)
     num_atms = len(atms)
     
-    # buffer by 3 for parameter type specification and comments
-    parse_length = num_atms + 3
-
-    ff_categories = {'defaults': 3, 'atomtypes': parse_length, 'bondtypes': parse_length, 'angletypes': parse_length, 'dihedraltypes': parse_length, 'pairtypes': parse_length}
-
     flz = glob.glob(opts.ff_dir + '*')
     of = opts.out
 
-    # iterate over parameter categories
-    p_cats = ff_categories.keys()
+    # figure out with files have needed data
+    p_cats = ['defaults', 'atomtypes', 'bondtypes', 'angletypes', 'dihedraltypes', 'pairtypes']
+    cat_to_file = {}
     for p_type in p_cats:
         data = None
         for f in flz:
-            data = subp.Popen(['grep', '-A', str(ff_categories[p_type]), p_type, f], stdout=subp.PIPE).communicate()[0]
+            data = subp.Popen(['grep', p_type, f], stdout=subp.PIPE).communicate()[0]
             # write relevant info to file
             if data is not None:
-                with open(of, 'a') as out_file:
-                    out_file.write(data)
+                cat_to_file[f] = p_type
                 continue
+
+    # parse relevant files and record data to new file
+    for fl in cat_to_file.keys():
+        with open(file, 'r') as ref:
+            lines = ref.readlines()
+        with open(of, 'a') as out_file:
+            for line in lines:
+                # skip blank lines
+                if not line.strip():
+                    continue
+                # look for parameter flags
+                if line.startswith('[')
+                    if any(key in line for key in p_cats):
+                        out_file.write(line)
+                        record = True
+                    continue
+                if record:
+                    # stop recording when section ends (blank line)
+                    if not line.strip():
+                        out_file.write(line)
+                        record = False
+                        continue
+                    elif any(atm in line for atm in uniq_atms): 
+                        out_file.write(line)
+                        continue
 
 if __name__ == '__main__':
     main()

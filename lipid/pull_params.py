@@ -40,8 +40,6 @@ def main():
                 cat_to_file[f] = p_type
                 continue
 
-    print uniq_atms
-
     # parse relevant files and record data to new file
     for fl in cat_to_file.keys():
         record = False
@@ -69,8 +67,7 @@ def main():
                     else:
                         l = line.split()
                         atms = set(l[0:cats[prop]])
-                        print l, '---', atms
-                        # check if atms list is a subset of uniq_atm list
+                        # check if atms list is a subset of uniq_atm set
                         if atms & uniq_atms == atms:
                             out_file.write(line)
                             continue

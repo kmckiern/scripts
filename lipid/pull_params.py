@@ -28,7 +28,8 @@ def main():
     of = opts.out
 
     # figure out with files have needed data
-    p_cats = ['defaults', 'atomtypes', 'bondtypes', 'angletypes', 'dihedraltypes', 'pairtypes']
+    cats = {'defaults': 0, 'atomtypes': 1, 'bondtypes': 2, 'angletypes': 3, 'dihedraltypes': 4, 'pairtypes': 2}
+    p_cats = cats.keys()
     cat_to_file = {}
     for p_type in p_cats:
         data = None
@@ -44,6 +45,7 @@ def main():
     # parse relevant files and record data to new file
     for fl in cat_to_file.keys():
         record = False
+        prop = None
         with open(fl, 'r') as ref:
             lines = ref.readlines()
         with open(of, 'a') as out_file:
@@ -55,6 +57,7 @@ def main():
                 if line.startswith('['):
                     if any(key in line for key in p_cats):
                         out_file.write(line)
+                        prop = line.split()[1].strip()
                         record = True
                     continue
                 if record:
@@ -63,9 +66,14 @@ def main():
                         out_file.write(line)
                         record = False
                         continue
-                    elif any(atm in line.split() for atm in uniq_atms): 
-                        out_file.write(line)
-                        continue
+                    else:
+                        l = line.split()
+                        atms = set(l[0:cats[prop]])
+                        print l, '---', atms
+                        # check if atms list is a subset of uniq_atm list
+                        if atms & uniq_atms == atms:
+                            out_file.write(line)
+                            continue
 
 if __name__ == '__main__':
     main()

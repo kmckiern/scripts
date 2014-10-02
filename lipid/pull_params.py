@@ -39,6 +39,8 @@ def main():
                 cat_to_file[f] = p_type
                 continue
 
+    print uniq_atms
+
     # parse relevant files and record data to new file
     for fl in cat_to_file.keys():
         record = False
@@ -61,7 +63,7 @@ def main():
                         out_file.write(line)
                         record = False
                         continue
-                    elif any(atm in line for atm in uniq_atms): 
+                    elif any(atm in line.split() for atm in uniq_atms): 
                         out_file.write(line)
                         continue
 

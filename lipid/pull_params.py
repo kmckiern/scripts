@@ -27,6 +27,9 @@ def main():
     flz = glob.glob(opts.ff_dir + '*')
     of = opts.out
 
+    # sanity check
+    print uniq_atms
+
     # figure out with files have needed data
     cats = {'defaults': 0, 'atomtypes': 1, 'bondtypes': 2, 'angletypes': 3, 'dihedraltypes': 4, 'pairtypes': 2}
     p_cats = cats.keys()
@@ -59,6 +62,9 @@ def main():
                         record = True
                     continue
                 if record:
+                    # skip switches
+                    if line.startswith('#'):
+                        continue
                     # stop recording when section ends (blank line)
                     if not line.strip():
                         out_file.write(line)

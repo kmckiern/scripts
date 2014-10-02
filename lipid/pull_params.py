@@ -7,6 +7,7 @@ parser makes lots of assumptions ... will make more general with time
 import argparse
 import os
 import subprocess as subp
+import glob
 
 parser = argparse.ArgumentParser(description='parse ff params from atom list file to out file')
 parser.add_argument('--af', type=str, help='file of atoms in system')
@@ -28,13 +29,20 @@ def main():
 
     ff_categories = {'defaults': 3, 'atomtypes': parse_length, 'bondtypes': parse_length, 'angletypes': parse_length, 'dihedraltypes': parse_length, 'pairtypes': parse_length}
 
-    path = opts.ff_dir
+    flz = glob.glob(opts.ff_dir + '*')
+    of = opts.out
 
     # iterate over parameter categories
     p_cats = ff_categories.keys()
     for p_type in p_cats:
-        data = subp.Popen(['grep', '-A', str(ff_categories[p_type]), ptype, path + '*'], stdout=subp.PIPE).communicate()[0]
-        print 'mer', data
+        data = None
+        for f in flz:
+            data = subp.Popen(['grep', '-A', str(ff_categories[p_type]), p_type, f], stdout=subp.PIPE).communicate()[0]
+            # write relevant info to file
+            if data is not None:
+                with open(of, 'a') as out_file:
+                    out_file.write(data)
+                continue
 
 if __name__ == '__main__':
     main()

@@ -41,7 +41,8 @@ def main():
 
     # parse relevant files and record data to new file
     for fl in cat_to_file.keys():
-        with open(file, 'r') as ref:
+        record = False
+        with open(fl, 'r') as ref:
             lines = ref.readlines()
         with open(of, 'a') as out_file:
             for line in lines:
@@ -49,7 +50,7 @@ def main():
                 if not line.strip():
                     continue
                 # look for parameter flags
-                if line.startswith('[')
+                if line.startswith('['):
                     if any(key in line for key in p_cats):
                         out_file.write(line)
                         record = True

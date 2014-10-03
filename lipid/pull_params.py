@@ -17,7 +17,7 @@ opts = parser.parse_args()
 
 def main():
     # get list of atoms for which we would like to find parameters
-    atms = []
+    atms = ['X']
     for line in open(opts.af, 'r').readlines():
         atms.append(line.strip())
     # remove duplicates, and determine now many unique elements

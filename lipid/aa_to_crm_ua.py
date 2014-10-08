@@ -9,7 +9,7 @@ import numpy as np
 
 parser = argparse.ArgumentParser(description='parse ff params from atom list file to out file')
 parser.add_argument('--xyz_file', type=str, help='path to coordinate file')
-parser.add_argument('--out_xyz', type=str, help='path to list of atoms to keep')
+parser.add_argument('--out_gro', type=str, help='path to list of atoms to keep')
 opts = parser.parse_args()
 
 tf = 'temp.pdb'
@@ -33,7 +33,7 @@ def main():
     p.save(op)
     # hella circular 
     x = Molecule(op)
-    x.write(opts.out_xyz)
+    x.write(opts.out_gro)
 
 if __name__ == '__main__':
     main()

@@ -25,10 +25,10 @@ def main():
     p = mdtraj.load(tf)
     # get list of hydrogens to remove
     c_ndx = [i.index for i in p.topology.atoms if i.name in c_strip]
-    tail_atms = [y for (x, y) in m.Data['bonds'] if x in c_indx]
+    tail_atms = [y for (x, y) in m.Data['bonds'] if x in c_ndx]
     tail_h = [i for i in tail_atms if i not in c_ndx]
     # throw out some hydrogens
-    atoms_to_keep = [b.index for b in t.topology.atoms if b.index not in just_h]
+    atoms_to_keep = [b.index for b in p.topology.atoms if b.index not in tail_h]
     p.restrict_atoms(atoms_to_keep)
     p.save(op)
     # hella circular 

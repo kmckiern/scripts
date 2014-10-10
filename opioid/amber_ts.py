@@ -20,6 +20,7 @@ import subprocess as subp
 import os
 import argparse
 import numpy as np
+from fmt_path import format_path
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -128,7 +129,7 @@ def gen_plots(ID, data_arrays, props, file_labels):
     pdfs.close()
 
 def main():
-    out_data = args.out_dir
+    out_data = format_path(args.out_dir)
     out_files = [f for f in os.listdir(out_data) if '.out' in f]
 
     if args.min:

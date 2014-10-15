@@ -35,6 +35,7 @@ def fill_template(template_pdb, lig_coords, resname, generated_pdb):
         for line in lines:
             l = line.split()
             if l[0] == 'TER':
+                of.write(line)
                 continue
             if resname in l:
                 l[5], l[6], l[7] = lig_coords[l[2]]

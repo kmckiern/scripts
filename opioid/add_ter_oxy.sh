@@ -8,6 +8,10 @@
 STDIN=( ${@} )
 
 for i in "${STDIN[@]}"; do
+    # delete random existing ter cards
+    sed -i '.bak' '/TER/d' $i
+
+    # add the proper tcs
     sed -i '.bak' '/OXT ILE/a\
     TER\
     '  $i

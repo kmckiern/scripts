@@ -11,6 +11,9 @@ for i in "${STDIN[@]}"; do
     # delete random existing ter cards
     sed -i '.bak' '/TER/d' $i
 
+    # delete model info
+    sed -i '.bak' '/MODEL/d' $i
+
     # add the proper tcs
     sed -i '.bak' '/OXT ILE/a\
     TER\
@@ -30,7 +33,7 @@ for i in "${STDIN[@]}"; do
     '  $i
     
     # for OXY pdbs
-    sed -i '.bak' '/O1  OXY/a\
+    sed -i '.bak' '/H19 OXY/a\
     TER\
     '  $i
     

@@ -11,8 +11,13 @@ for i in "${STDIN[@]}"; do
     # delete random existing ter cards
     sed -i '.bak' '/TER/d' $i
 
+    # delete preface
+    sed -i '.bak' '/TITLE/d' $i
+    sed -i '.bak' '/REMARK/d' $i
+
     # delete model info
     sed -i '.bak' '/MODEL/d' $i
+    sed -i '.bak' 's/ENDMDL/END/g' $i
 
     # add the proper tcs
     sed -i '.bak' '/OXT ILE/a\

@@ -18,7 +18,6 @@ do
             R_F=$OPTARG;;
         h)
             HFLAG=1
-            echo "
             -[flag]: [argument]. For all but h.
             -n: common root between submission scripts
             -z: job number to follow
@@ -27,10 +26,8 @@ do
             " >&2
             ;;
         \?)
-            echo "Invalid option: -$OPTARG" >&2
             exit 1;;
         :)
-            echo "Missing argument for -$OPTARG" >&2
             exit 1;;
         esac
 done
@@ -39,7 +36,7 @@ if [ $HFLAG -eq 0 ]
 then
     PREV_JERB=$JOB_0
     for i in $(seq $R_0 $R_F); do
-        SUB=$SCRIPT_ROOT + "_" + $i + ".sh"
+        SUB="${SCRIPT_ROOT}${i}.sh"
         JERB=$(qsub -W depend=afterany:$PREV_JERB $SUB)
         PREV_JERB=$JERB
     done

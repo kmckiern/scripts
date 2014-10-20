@@ -5,6 +5,9 @@
 # jobs must be okay with the same type of follow specifications
 #   eg afterany v afterok etc.
 
+# Help?
+HFLAG=0
+
 while getopts ":n:z:b:e:h" opt;
 do
     case $opt in
@@ -18,6 +21,7 @@ do
             R_F=$OPTARG;;
         h)
             HFLAG=1
+            echo "
             -[flag]: [argument]. For all but h.
             -n: common root between submission scripts
             -z: job number to follow
@@ -26,8 +30,10 @@ do
             " >&2
             ;;
         \?)
+            echo "Invalid option: -$OPTARG" >&2
             exit 1;;
         :)
+            echo "Missing argument for -$OPTARG" >&2
             exit 1;;
         esac
 done

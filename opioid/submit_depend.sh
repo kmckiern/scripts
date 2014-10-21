@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# this allows for the submission of serial jobs on a qsub system
-# jobs must look like this: script_root[R_0:R_F]
+# this allows for the submission of serially dependent jobs on a qsub system
+# jobs must look like this: script_root[R_0:R_F].sh
 # jobs must be okay with the same type of follow specifications
 #   eg afterany v afterok etc.
 

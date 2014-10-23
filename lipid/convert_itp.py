@@ -12,11 +12,7 @@ have:
 
 1. add hydrogens and connectivity information from c dpuc to an
 2. convert charmm gui dpuc pdb to have g atomnames (matching the itp written above).
-    aa: /Users/kerimckiernan/Downloads/step5_assembly.pdb
-    parsed:
 3. maybe think about how to add parameters for hydrogens. start with some initial guess and scan?
-
-atomname map file: /Users/kerimckiernan/Downloads/aa_gb/at.dat
 """
 
 import argparse

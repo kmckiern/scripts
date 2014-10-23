@@ -16,11 +16,15 @@ have:
 1. add hydrogens and connectivity information from c dpuc to an
 2. convert charmm gui dpuc pdb to have g atomnames (matching the itp written above).
 3. maybe think about how to add parameters for hydrogens. start with some initial guess and scan?
+
+example usage:
+    >> python /Users/kerimckiernan/Dropbox/scripts/lipid/convert_itp.py --map_file at.dat --model_i DPUC --model_f DPPC --structure_file --f_i cg_cent.gro --write_out test.gro
 """
 
 import argparse
 from parse_tools import get_ls
 import sys
+import re
 
 parser = argparse.ArgumentParser(description='parse ff params from atom list file to out file')
 parser.add_argument('--map_file', type=str, help='name of file with atom map specifications')
@@ -57,15 +61,27 @@ def model_dict(am, mdl_i, mdl_f):
 
 def map_sf(in_file, atomname_map, out_file):
     old_keys = atomname_map.keys()
+    an_field = 4
     with open(in_file, "r") as template:
         lines = template.readlines()
     with open(out_file, "w") as of:
         for line in lines:
-            l = line.split()
-            if len(l) > 1:
-                if l[1] in old_keys:
-                    l[1] = atomname_map[l[1]]
-                    of.write("\t" + "\t".join(l) + "\n")
+            l = re.split(r'(\s+)', line)
+            if len(l) > an_field + 1:
+                if l[an_field] in old_keys:
+                    # whitespace conservation, right align
+                    conserve_length = len(l[an_field-1] + l[an_field])
+                    sub = atomname_map[l[an_field]]
+                    l_diff = len(sub) - len(l[an_field])
+                    # replace atom name
+                    l[an_field] = sub
+                    # subtract whitespace diff from prev field
+                    if l_diff > 0:
+                        l[an_field-1] = l[an_field-1][:-(l_diff)]
+                    else:
+                        for space in range(abs(l_diff)):
+                            l[an_field-1] += ' '
+                    of.write("".join(l))
                 else:
                     of.write(line)
             else:

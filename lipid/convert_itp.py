@@ -30,8 +30,8 @@ parser = argparse.ArgumentParser(description='parse ff params from atom list fil
 parser.add_argument('--map_file', type=str, help='name of file with atom map specifications')
 parser.add_argument('--model_i', type=str, help='initial model name')
 parser.add_argument('--model_f', type=str, help='final model name')
-parser.add_argument('--structure_file', action='store_true', help='convert pdb or gro file')
-parser.add_argument('--itp', action='store_true', help='convert itp file')
+parser.add_argument('--structure_file', action='store_true', help='convert pdb or gro file', default=False)
+parser.add_argument('--itp', action='store_true', help='convert itp file', default=False)
 parser.add_argument('--f_i', type=str, help='initial model file')
 parser.add_argument('--f_f', type=str, help='initial model file', default=None)
 parser.add_argument('--write_out', type=str, help='name for converted file')
@@ -59,7 +59,11 @@ def model_dict(am, mdl_i, mdl_f):
         cat[l[i_ndx[1]]] = l[f_ndx[1]]
     return li, lf, ca, cat
 
-def map_sf(in_file, atomname_map, out_file):
+# get nr for for each atom
+def get_nr(itp_file, an):
+    print 'nothing yet'
+
+def map_file(in_file, atomname_map, out_file, sf=False, itp=False):
     old_keys = atomname_map.keys()
     an_field = 4
     with open(in_file, "r") as template:
@@ -67,25 +71,28 @@ def map_sf(in_file, atomname_map, out_file):
     with open(out_file, "w") as of:
         for line in lines:
             l = re.split(r'(\s+)', line)
-            if len(l) > an_field + 1:
-                if l[an_field] in old_keys:
-                    # whitespace conservation, right align
-                    conserve_length = len(l[an_field-1] + l[an_field])
-                    sub = atomname_map[l[an_field]]
-                    l_diff = len(sub) - len(l[an_field])
-                    # replace atom name
-                    l[an_field] = sub
-                    # subtract whitespace diff from prev field
-                    if l_diff > 0:
-                        l[an_field-1] = l[an_field-1][:-(l_diff)]
+            if sf:
+                if len(l) > an_field + 1:
+                    if l[an_field] in old_keys:
+                        # whitespace conservation, right align
+                        conserve_length = len(l[an_field-1] + l[an_field])
+                        sub = atomname_map[l[an_field]]
+                        l_diff = len(sub) - len(l[an_field])
+                        # replace atom name
+                        l[an_field] = sub
+                        # subtract whitespace diff from prev field
+                        if l_diff > 0:
+                            l[an_field-1] = l[an_field-1][:-(l_diff)]
+                        else:
+                            for space in range(abs(l_diff)):
+                                l[an_field-1] += ' '
+                        of.write("".join(l))
                     else:
-                        for space in range(abs(l_diff)):
-                            l[an_field-1] += ' '
-                    of.write("".join(l))
+                        of.write(line)
                 else:
                     of.write(line)
-            else:
-                of.write(line)
+            if itp:
+                print 'making sure it works so far'
 
 def main():
     # get atom type and name map
@@ -94,8 +101,7 @@ def main():
     mi, mf, cross_an, cross_at = model_dict(atom_map, opts.model_i, opts.model_f)
 
     # pdb or gro conversion just maps atom names (not types)
-    if opts.structure_file:
-        map_sf(opts.f_i, cross_an, opts.write_out)
+    map_file(opts.f_i, cross_an, opts.write_out, opts.structure_file, opts.itp)
 
 if __name__ == '__main__':
     main()

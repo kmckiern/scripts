@@ -1,21 +1,7 @@
 #!/usr/bin/env python
 
 """
-script for converting files between models
-
-mostly written for the following two:
-g53a6b := g
-c36ua := c
-
-write conversion scripts
-have:
-- g dppc itp file (50 atms)
-- c dpuc itp file (72 atms)
-- c dpuc pdb
-
-1. add hydrogens and connectivity information from c dpuc to an
-2. convert charmm gui dpuc pdb to have g atomnames (matching the itp written above).
-3. maybe think about how to add parameters for hydrogens. start with some initial guess and scan?
+script for converting files between lipid models
 
 example usage:
     >> python /Users/kerimckiernan/Dropbox/scripts/lipid/convert_itp.py --map_file at.dat --model_i DPUC --model_f DPPC --structure_file --f_i cg_cent.gro --write_out test.gro

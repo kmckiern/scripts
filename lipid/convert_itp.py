@@ -19,7 +19,8 @@ parser.add_argument('--model_f', type=str, help='final model name')
 parser.add_argument('--structure_file', action='store_true', help='convert pdb or gro file', default=False)
 parser.add_argument('--itp', action='store_true', help='convert itp file', default=False)
 parser.add_argument('--f_i', type=str, help='initial model file')
-parser.add_argument('--f_f', type=str, help='initial model file', default=None)
+parser.add_argument('--nr_i', type=str, help='initial number file', default=False)
+parser.add_argument('--nr_f', type=str, help='final number file')
 parser.add_argument('--write_out', type=str, help='name for converted file')
 opts = parser.parse_args()
 
@@ -46,17 +47,24 @@ def model_dict(am, mdl_i, mdl_f):
     return li, lf, ca, cat
 
 # get nr for for each atom
-def get_nr(itp_file, an):
-    print 'nothing yet'
+def get_nr(nr_file, an):
+    number_map = {}
+    nr = get_ls(nr_file)
+    for line in nr:
+        l = line.split()
+        if l[4] in an:
+            number_map[l[4]] = l[0]
+    return number_map
 
 def map_file(in_file, atomname_map, out_file, sf=False, itp=False):
-    old_keys = atomname_map.keys()
     an_field = 4
+    switch = False
     with open(in_file, "r") as template:
         lines = template.readlines()
     with open(out_file, "w") as of:
         for line in lines:
             l = re.split(r'(\s+)', line)
+            # structure file parsing
             if sf:
                 if len(l) > an_field + 1:
                     if l[an_field] in old_keys:
@@ -77,14 +85,29 @@ def map_file(in_file, atomname_map, out_file, sf=False, itp=False):
                         of.write(line)
                 else:
                     of.write(line)
+            # itp file parsing
             if itp:
-                print 'making sure it works so far'
+                # get atom numbers for each model 
+                # 
+                if switch:
+                    break
+                else:
+                    if '[ atoms ]' in line:
+                        switch = True
 
 def main():
     # get atom type and name map
     atom_map = get_ls(opts.map_file)
     # build description dictionary for each model, as well as cross model reference
     mi, mf, cross_an, cross_at = model_dict(atom_map, opts.model_i, opts.model_f)
+
+    old_keys = cross_an.keys()
+    new_keys = cross_an.values()
+
+    if opts.nr_i:
+        n0 = get_nr(opts.nr_i, old_keys) 
+        nf = get_nr(opts.nr_f, new_keys) 
+        # get map from old to new.
 
     # pdb or gro conversion just maps atom names (not types)
     map_file(opts.f_i, cross_an, opts.write_out, opts.structure_file, opts.itp)

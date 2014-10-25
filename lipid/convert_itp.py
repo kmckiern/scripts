@@ -56,6 +56,20 @@ def get_nr(nr_file, an):
             number_map[l[4]] = l[0]
     return number_map
 
+# whitespace conservation, right align
+def ws_sub(line, field, sub):
+    conserve_length = len(line[field-1] + line[field])
+    l_diff = len(sub) - len(line[field])
+    # replace
+    line[field] = sub
+    # subtract whitespace diff from prev field
+    if l_diff > 0:
+        line[field-1] = line[field-1][:-(l_diff)]
+    else:
+        for space in range(abs(l_diff)):
+            line[field-1] += ' '
+    return line
+
 def map_file(in_file, atomname_map, out_file, m_ndx, sf=False, itp=False):
     an_field = 4
     switch = False
@@ -69,18 +83,7 @@ def map_file(in_file, atomname_map, out_file, m_ndx, sf=False, itp=False):
             if sf:
                 if len(l) > an_field + 1:
                     if l[an_field] in old_keys:
-                        # whitespace conservation, right align
-                        conserve_length = len(l[an_field-1] + l[an_field])
-                        sub = atomname_map[l[an_field]]
-                        l_diff = len(sub) - len(l[an_field])
-                        # replace atom name
-                        l[an_field] = sub
-                        # subtract whitespace diff from prev field
-                        if l_diff > 0:
-                            l[an_field-1] = l[an_field-1][:-(l_diff)]
-                        else:
-                            for space in range(abs(l_diff)):
-                                l[an_field-1] += ' '
+                        l = wp_sub(l, an_field, atomname_map[l[an_field]])
                         of.write("".join(l))
                     else:
                         of.write(line)
@@ -91,7 +94,7 @@ def map_file(in_file, atomname_map, out_file, m_ndx, sf=False, itp=False):
                 if switch:
                     for i, ele in enumerate(l):
                         if ele in uh:
-                            l[i] = m_ndx[ele]
+                            l = wp_sub(l, i, m_ndx[ele])
                     of.write("".join(l))
                 else:
                     if '[ bonds ]' in line:

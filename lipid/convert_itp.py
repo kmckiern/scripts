@@ -95,6 +95,9 @@ def map_file(in_file, atomname_map, out_file, m_ndx, sf=False, itp=False):
             # itp file parsing
             if itp:
                 if switch:
+                    if '[ moleculetype ]' in line:
+                        switch = False
+                        break
                     for i, ele in enumerate(l):
                         if ele in uh:
                             l = ws_sub(l, i, m_ndx[ele])

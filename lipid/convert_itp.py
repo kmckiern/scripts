@@ -56,9 +56,10 @@ def get_nr(nr_file, an):
             number_map[l[4]] = l[0]
     return number_map
 
-def map_file(in_file, atomname_map, out_file, sf=False, itp=False):
+def map_file(in_file, atomname_map, out_file, m_ndx, sf=False, itp=False):
     an_field = 4
     switch = False
+    uh = m_ndx.keys()
     with open(in_file, "r") as template:
         lines = template.readlines()
     with open(out_file, "w") as of:
@@ -87,12 +88,13 @@ def map_file(in_file, atomname_map, out_file, sf=False, itp=False):
                     of.write(line)
             # itp file parsing
             if itp:
-                # get atom numbers for each model 
-                # 
                 if switch:
-                    break
+                    for i, ele in enumerate(l):
+                        if ele in uh:
+                            l[i] = m_ndx[ele]
+                    of.write("".join(l))
                 else:
-                    if '[ atoms ]' in line:
+                    if '[ bonds ]' in line:
                         switch = True
 
 def main():
@@ -108,9 +110,13 @@ def main():
         n0 = get_nr(opts.nr_i, old_keys) 
         nf = get_nr(opts.nr_f, new_keys) 
         # get map from old to new.
+        map_ndx = {}
+        for atm in cross_an:
+            map_ndx[n0[atm]] = nf[cross_an[atm]]
+        frm = map_ndx.keys()
 
     # pdb or gro conversion just maps atom names (not types)
-    map_file(opts.f_i, cross_an, opts.write_out, opts.structure_file, opts.itp)
+    map_file(opts.f_i, cross_an, opts.write_out, map_ndx, opts.structure_file, opts.itp)
 
 if __name__ == '__main__':
     main()

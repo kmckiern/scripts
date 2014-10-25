@@ -4,7 +4,10 @@
 script for converting files between lipid models
 
 example usage:
-    >> python /Users/kerimckiernan/Dropbox/scripts/lipid/convert_itp.py --map_file at.dat --model_i DPUC --model_f DPPC --structure_file --f_i cg_cent.gro --write_out test.gro
+    for structure files:
+    >> python convert_itp.py --map_file at.dat --model_i DPUC --model_f DPPC --structure_file --f_i cg_cent.gro --write_out test.gro
+    for itp files:
+    >> python convert_itp.py --map_file at.dat --itp --f_i DPUC.itp --nr_i dpuc_aahg_anr.dat --nr_f dppc_aahg_anr.dat --write_out test.itp --model_i DPUC --model_f DPPC
 """
 
 import argparse
@@ -83,7 +86,7 @@ def map_file(in_file, atomname_map, out_file, m_ndx, sf=False, itp=False):
             if sf:
                 if len(l) > an_field + 1:
                     if l[an_field] in old_keys:
-                        l = wp_sub(l, an_field, atomname_map[l[an_field]])
+                        l = ws_sub(l, an_field, atomname_map[l[an_field]])
                         of.write("".join(l))
                     else:
                         of.write(line)
@@ -94,7 +97,7 @@ def map_file(in_file, atomname_map, out_file, m_ndx, sf=False, itp=False):
                 if switch:
                     for i, ele in enumerate(l):
                         if ele in uh:
-                            l = wp_sub(l, i, m_ndx[ele])
+                            l = ws_sub(l, i, m_ndx[ele])
                     of.write("".join(l))
                 else:
                     if '[ bonds ]' in line:

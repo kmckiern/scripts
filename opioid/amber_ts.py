@@ -20,6 +20,7 @@ import subprocess as subp
 import os
 import argparse
 import numpy as np
+from fmt_path import format_path
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -50,7 +51,8 @@ def parse_out(of, props):
         summary_frames = int(subp.Popen(['grep', '-c', 'A V E R A G E S', of], stdout=subp.PIPE).communicate()[0])
         summary_frames += int(subp.Popen(['grep', '-c', 'F L U C T U A T I O N S', of], stdout=subp.PIPE).communicate()[0])
         num_frames -= summary_frames
-    data_arr = np.zeros((num_frames, len(props)))
+    data_arr = np.empty((num_frames, len(props)))
+    data_arr[:] = np.nan
     frame = 0
     record = False
     # populate data_arr
@@ -115,17 +117,20 @@ def gen_plots(ID, data_arrays, props, file_labels):
                 else:
                     time_ax = np.array(arr[:, props['TIME(PS)']])
                 data_label = file_labels[ndx].split('/')[-1].split('.')[0]
-                plt.plot(time_ax, arr[:, props[p]], alpha=.5, label=data_label)
+                # if 'equil' in data_label:
+                #    plt.plot(time_ax[:300], arr[:, props[p]][:300], alpha=.5, label=data_label)
+                # else:
+                plt.plot(time_ax[:-2], arr[:, props[p]][:-2], alpha=.5, label=data_label)
                 if args.final:
                     plt.plot(time_ax[-1], arr[:, props[p]][-1], 'o', ms=12, color=plt.rcParams['axes.color_cycle'][ndx % n_colors])
             if args.legend:
-                plt.legend(prop={'size':6})
+                plt.legend(prop={'size':6}, loc=4)
             pdfs.savefig()
             plt.clf()
     pdfs.close()
 
 def main():
-    out_data = args.out_dir
+    out_data = format_path(args.out_dir)
     out_files = [f for f in os.listdir(out_data) if '.out' in f]
 
     if args.min:

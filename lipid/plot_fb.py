@@ -3,21 +3,26 @@
 """
 This script parses a forcebalance output file and plots the data.
 
+for the future - be able to pick an iteration from an arb outfile.
+    legend displays filename and iteration number
+
 example usage:
-    >> ./amber_equil.py --root_dir path/to/root/dir --ligand oxy --rst --e1
+    >> ./plot_fb.py --of optimize.out --ir 0,1 --pdf_out filename
 """
 
-import subprocess as subp
 import os
-import shutil
 import argparse
-import math
-import copy
 import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
 parser = argparse.ArgumentParser(description='Parse and plot ForceBalance output data.')
 parser.add_argument('--of', type=str, help='ForceBalance out file')
 parser.add_argument('--ir', type=str, help='Range of iterations to plot.  enter as follows: first,last')
+parser.add_argument('--pdf_out', type=str, help='PDF out file name')
+parser.add_argument('--multi', type=str, help='List of out files to pull iteration data from')
+parser.add_argument('--corres_iters', type=str, help='Iterations to pull from multiple files (lists are respective)')
 # parser.add_argument('--nt', type=int, help='Number of condensed phase temperature points')
 opts = parser.parse_args()
 
@@ -25,7 +30,12 @@ script_root = '/'.join(os.path.realpath(__file__).split('/')[0:-1])
 
 # currently don't feel like getting this information in a general way.
 properties = {'LipidDPPC Average Area per Lipid': 1, 'LipidDPPC Deuterium Order Parameter': 28, 'LipidDPPC Average Volume per Lipid': 1}
+scd_key = properties.keys()[1]
+scd_val = properties[scd_key]
 property_files = script_root + '/possible_props.dat'
+
+# plot configs
+matplotlib.rcParams.update({'font.size': 8})
 
 def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
     # read and record data
@@ -34,7 +44,7 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
     scd = False
     pi = None
     iteration = 0
-    c_node = 0
+    ln = 0
     boo = 0
     for line in open(fb_out, 'r'):
         # skip blank lines
@@ -47,7 +57,7 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
             if line.startswith('-'):
                 record = False
                 pi = None
-                c_node = 0
+                ln = 0
                 boo += 1      
                 if boo == len(selected_props):
                     boo = 0
@@ -59,31 +69,40 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
             elif scd:
                 if l[0] in tp:
                     scd_temp = float(l[0])
-                    ln = tp.index(l[0])
+                    t = tp.index(l[0])
                     continue
                 else:
-                    data_dict[pi][iteration - i0][c_node][ln] = scd_temp, float(l[1]), float(l[3])
+                    data_dict[pi][iteration - i0][t][ln][1:] = float(l[1]), float(l[3])
                     if iteration == i0:
-                        ref_dict[pi][c_node][ln] = scd_temp, float(l[0])
-                    if c_node == properties[pi] - 1:
+                        # hacky.  dk how to be general for this one...
+                        if tp[t] == '333.15':
+                            ref_dict[pi][t][ln][1:] = np.NAN
+                        else:
+                            ref_dict[pi][t][ln][1:] = float(l[0])
+                    if ln == properties[pi] - 1:
                         if scd_temp == float(tp[-1]):
                             scd = False
                             continue
                         else:
-                            c_node = 0
+                            ln = 0
                     else:
-                        c_node += 1
+                        ln += 1
             elif l[0] in tp:
                 ln = tp.index(l[0])
                 if iteration in iter_ls:
                     # s_cd is formatted really weirdly compared to the other properties
-                    if pi not in properties.keys()[1]:
+                    if pi not in scd_key:
                         data_dict[pi][iteration - i0][0][ln] = float(l[0]), float(l[4]), float(l[6])
                         if iteration == i0:
-                            ref_dict[pi][0][ln] = float(l[0]), float(l[3])
+                            # don't record the exp data with zero weight
+                            if abs(float(l[8])) < 1e-9:
+                                ref_dict[pi][0][ln] = float(l[0]), np.NAN
+                            else:
+                                ref_dict[pi][0][ln] = float(l[0]), float(l[3])
                     else:
                         scd = True
                         scd_temp = float(l[0])
+                        t = tp.index(l[0])
                         continue
         else:
             # look for property flag
@@ -98,39 +117,48 @@ def parse_out(fb_out, ref_dict, data_dict, tp, iter_ls, selected_props):
                 continue
     return data_dict, ref_dict
 
-def gen_plots(ID, data_arrays, props, file_labels):
+def buffer(arr):
+    return 2*(max(arr) - min(arr))/len(arr)
+
+def gen_plots(ID, data_arrs, ref_arrs, props, iter_ls, tp):
     '''
-    ID: for naming the PDF.
-    data_arrays: time series matrix for all files.
-    props: list of properties we wish to plot.
-    file_labels: file names (for legend).
+    ID: for naming the PDF
+    data_arrays: time series matrices for all properties
+    ref_arr: experiemental data
+    props: list of properties we wish to plot
+    iter_ls: list of iterations to plot
     '''
     # Pull trj time information.
     pdfs = PdfPages(ID + '.pdf')
+    # n_colors = len(plt.rcParams['axes.color_cycle'])
     for p in props:
-        if p in ('TIME(PS)', 'NSTEP', 'EHBOND'):
-            continue
-        else:
-            n_colors = len(plt.rcParams['axes.color_cycle'])
-            plt.ylabel(p)
-            plt.xlabel('t / ps')
-            plt.grid(True)
-            for ndx, arr in enumerate(data_arrays):
-                if args.min:
-                    time_ax = np.array(arr[:, props['NSTEP']])
+        plt.grid(True)
+        plt.margins(.1)
+        plt.ylabel(p)
+        plt.xlabel('T / K')
+        for itr, arr in enumerate(data_arrs[p]):
+            for d in range(arr.shape[0]):
+                data_label = 'i' + str(iter_ls[itr])
+                x = arr[d][:,0]
+                vals = arr[d][:,1]
+                y_err = arr[d][:,2]
+                if scd_key == p:
+                    plt.subplot(len(tp)/2, 2, d)
+                    lg = 3
+                    if itr == 0:
+                        plt.title(tp[d])
+                    x_buff = buffer(x)
+                    plt.xlim([min(x)-x_buff, max(x)+x_buff])
+                    plt.ylim([0, 0.30])
                 else:
-                    time_ax = np.array(arr[:, props['TIME(PS)']])
-                data_label = file_labels[ndx].split('/')[-1].split('.')[0]
-                # if 'equil' in data_label:
-                #    plt.plot(time_ax[:300], arr[:, props[p]][:300], alpha=.5, label=data_label)
-                # else:
-                plt.plot(time_ax, arr[:, props[p]], alpha=.5, label=data_label)
-                if args.final:
-                    plt.plot(time_ax[-1], arr[:, props[p]][-1], 'o', ms=12, color=plt.rcParams['axes.color_cycle'][ndx % n_colors])
-            if args.legend:
-                plt.legend(prop={'size':6}, loc=4)
-            pdfs.savefig()
-            plt.clf()
+                    lg = 4
+                if itr == 0:
+                    plt.plot(x, ref_arrs[p][d][:,1], 'ko', markersize=6, label='exp')
+                plt.plot(x, vals, 'D-', alpha=.66, markersize=4, label=data_label)
+                # plt.errorbar(x, vals, yerr=y_err, fmt=None, color='r')
+        plt.legend(prop={'size':6}, loc=lg)
+        pdfs.savefig()
+        plt.clf()
     pdfs.close()
 
 def main():
@@ -148,6 +176,8 @@ def main():
         iters = [i for i in range(int(i_init), int(i_final) + 1)]
     # this is temporary.  don't feel like being general
     temps = ['323.15', '333.15', '338.15', '353.15']
+    
+    c_nodes = np.arange(scd_val)
 
     """
     build data dictionary
@@ -166,16 +196,33 @@ def main():
     for p in props:
         for i in iters:
             if not p in datums:
-                datums[p] = [np.zeros((properties[p], nt, 3))]
-                ref_data[p] = np.zeros((properties[p], nt, 2))
+                if scd_key in p:
+                    datums[p] = [np.empty((nt, properties[p], 3))]
+                    ref_data[p] = np.empty((nt, properties[p], 2))
+                else:
+                    datums[p] = [np.empty((properties[p], nt, 3))]
+                    ref_data[p] = np.empty((properties[p], nt, 2))
+                datums[p][0][:] = np.nan
+                ref_data[p][:] = np.nan
             else:
-                datums[p].append(np.zeros((properties[p], nt, 3)))
+                if scd_key in p:
+                    datum = np.empty((nt, properties[p], 3))
+                else:
+                    datum = np.empty((properties[p], nt, 3))
+                datum[:] = np.nan
+                datums[p].append(datum)
+
+    # carbon nodes are always arranged successively
+    if scd_key in datums:
+        for itr in datums[scd_key]:
+            for temp in itr:
+                temp[:,0] = c_nodes
 
     # parse forcebalance output file.
     data, ref = parse_out(opts.of, ref_data, datums, temps, iters, props)
 
-    # write_pref = out_data + args.pdf_name
-    # gen_plots(write_pref, data_mtrxs, prop_arr, out_files)
+    # plot da data
+    gen_plots(opts.pdf_out, datums, ref_data, props, iters, temps)
 
 if __name__ == '__main__':
     main()

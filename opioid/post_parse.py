@@ -9,6 +9,7 @@ import os
 import subprocess as subp
 import numpy as np
 import copy
+from fmt_path import format_path
 
 parser = argparse.ArgumentParser(description='ptraj and subscript to postprocess data')
 parser.add_argument('--map_file', type=str, help='map between raw trjs and out')
@@ -51,18 +52,20 @@ def main():
         lig, trj_out = pair
 
         replace = {'LIG': lig, 'TRJ': trj_out, 'ROOT_DIR': rd}
-        
-        # gen sub script
-        # replace
-        subs = fill_template(ss, replace)
-        print subs
-        # write to correct dir
 
-        # append ligand dependent ptraj data
-        # replace
+        lig_dir = format_path(rd, lig)
+        sub_dir = format_path(rd, 'sub')
+        
+        # replace sub script
+        subs = fill_template(ss, replace)
+        # write to sub dir
+        with open(sub_dir + lig + '.sh', 'w') as out_sub:
+            for ln in subs:
+                out_sub.write(ln)
+
+        # replace ligand dependent ptraj data
         ptraj = fill_template(p_app, replace)
-        # append to ptraj.in in correct dir
-        print ptraj
+        # append
 
 if __name__ == '__main__':
     main()

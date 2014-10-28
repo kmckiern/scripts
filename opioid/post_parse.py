@@ -10,10 +10,12 @@ import subprocess as subp
 import numpy as np
 import copy
 from fmt_path import format_path
+import shutil
 
 parser = argparse.ArgumentParser(description='ptraj and subscript to postprocess data')
 parser.add_argument('--map_file', type=str, help='map between raw trjs and out')
 parser.add_argument('--pt_app', type=str, help='ptraj.in append file')
+parser.add_argument('--bk_pt', action='store_true', help='backup ptraj.in file')
 parser.add_argument('--sub', type=str, help='sub script')
 parser.add_argument('--root', type=str, help='root dir')
 args = parser.parse_args()
@@ -51,10 +53,12 @@ def main():
     for pair in map:
         lig, trj_out = pair
 
-        replace = {'LIG': lig, 'TRJ': trj_out, 'ROOT_DIR': rd}
-
         lig_dir = format_path(rd, lig)
+        to_dir = format_path(rd, trj_out)
         sub_dir = format_path(rd, 'sub')
+
+        replace = {'LIG': lig, 'TRJ': to_dir, 'ROOT_DIR': rd}
+
         
         # replace sub script
         subs = fill_template(ss, replace)
@@ -65,7 +69,16 @@ def main():
 
         # replace ligand dependent ptraj data
         ptraj = fill_template(p_app, replace)
+        pt_in = lig_dir + 'ptraj.in'
+        # backup if desired
+        if args.bk_pt:
+            shutil.copy2(pt_in, pt_in + '.bak')
+        else:
+            shutil.copy2(pt_in + '.bak', pt_in)
         # append
+        with open(pt_in, 'a') as out_pt:
+            for ln in ptraj:
+                out_pt.write(ln)
 
 if __name__ == '__main__':
     main()

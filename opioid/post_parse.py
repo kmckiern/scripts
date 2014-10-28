@@ -21,8 +21,8 @@ def get_map(list_file):
     # get list of atoms to remove.
     data = []
     for line in open(list_file, 'r').readlines():
-        ls.append(line.split())
-    return ls
+        data.append(line.split())
+    return data
 
 def fill_template(template_file, map_data):
     with open(template_file, "r") as template:
@@ -41,7 +41,7 @@ def fill_template(template_file, map_data):
 def main():
     # init vars
     rd = args.root
-    p_app = args.pti
+    p_app = args.pt_app
     ss = args.sub
 
     # read in map file

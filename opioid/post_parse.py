@@ -46,7 +46,7 @@ def fill_template(template_file, map_data):
 
 def main():
     # init vars
-    rd = args.root
+    rd = format_path(args.root)
     p_app = args.pt_app
     ss = args.sub
 

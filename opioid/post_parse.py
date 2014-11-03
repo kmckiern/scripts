@@ -2,6 +2,9 @@
 
 """
 post process titan opioid simulations
+
+example usage:
+    >> python ~/scripts/opioid/post_parse.py --map_file map.dat --sub ../comb_strip_template.sh --pt_app ../ptraj_strip_append.in --root /path/to/root/dir/lig/
 """
 
 import argparse

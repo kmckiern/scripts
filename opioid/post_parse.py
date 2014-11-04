@@ -4,8 +4,7 @@
 post process titan opioid simulations
 
 example usage:
-    >> python ~/scripts/opioid/post_parse.py --map_file map_co.dat --pt_app ../../ptraj_comb_cent_template.in --sub ../../comb_strip_dcd_template.sh --root /home/kmckiern/sims/opioid/md/uncent/c_o/
-
+    >> python ~/scripts/opioid/post_parse.py --map_file map.dat --sub ../comb_strip_template.sh --pt_app ../ptraj_strip_append.in --root /path/to/root/dir/lig/
 """
 
 import argparse
@@ -48,7 +47,7 @@ def fill_template(template_file, map_data):
 
 def main():
     # init vars
-    rd = args.root
+    rd = format_path(args.root)
     p_app = args.pt_app
     ss = args.sub
 

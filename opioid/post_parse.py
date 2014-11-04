@@ -17,8 +17,7 @@ import shutil
 
 parser = argparse.ArgumentParser(description='ptraj and subscript to postprocess data')
 parser.add_argument('--map_file', type=str, help='map between raw trjs and out')
-parser.add_argument('--pt_app', type=str, help='ptraj.in append file')
-parser.add_argument('--pt', action='store_true', help='gen ptraj.in file')
+parser.add_argument('--pt_app', type=str, help='ptraj.in append file', default='nah')
 parser.add_argument('--bk_pt', action='store_true', help='backup ptraj.in file')
 parser.add_argument('--sub', type=str, help='sub script')
 parser.add_argument('--root', type=str, help='root dir')
@@ -54,7 +53,7 @@ def main():
     # read in map file
     map = get_map(args.map_file)
     
-    for pair in map:
+    if p_app != 'nah':
         lig, trj_out = pair
 
         lig_dir = format_path(rd, lig)

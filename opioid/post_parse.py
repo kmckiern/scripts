@@ -53,7 +53,7 @@ def main():
     # read in map file
     map = get_map(args.map_file)
     
-    if p_app != 'nah':
+    for pair in map:
         lig, trj_out = pair
 
         lig_dir = format_path(rd, lig)
@@ -70,7 +70,7 @@ def main():
             for ln in subs:
                 out_sub.write(ln)
 
-        if args.pt:
+        if p_app != 'nah':
             # replace ligand dependent ptraj data
             ptraj = fill_template(p_app, replace)
             pt_in = lig_dir + 'ptraj.in'

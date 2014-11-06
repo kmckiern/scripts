@@ -18,7 +18,7 @@ for i in tn:
     z = z.join(ts['trj%s.h5' % i])
 
 # trim data to have a frame every 1 ns
-z = []
+frames = []
 for i in range(len(z)):
     if i % 10 == 0:
         frames.append(i)

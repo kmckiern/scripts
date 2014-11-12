@@ -33,6 +33,10 @@ for i in "${STDIN[@]}"; do
     TER\
     '  $i
 
+    sed -i '.bak' '/O12 PE/a\
+    TER\
+    '  $i
+
     sed -i '.bak' '/H16T PA/a\
     TER\
     '  $i
@@ -43,6 +47,10 @@ for i in "${STDIN[@]}"; do
     '  $i
     
     sed -i '.bak' '/CAL CAL/a\
+    TER\
+    '  $i
+    
+    sed -i '.bak' '/C0  C0/a\
     TER\
     '  $i
     

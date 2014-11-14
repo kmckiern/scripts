@@ -101,7 +101,6 @@ def fill_template(template_file, script_destination, ext, replacement_map, multi
                             l = copy.deepcopy(l_bk)
                     else:
                             for region in l:
-                                print 'r', region
                                 if region in replacement_map:
                                     r_map = replacement_map[region]
                                     if isinstance(r_map, list):

@@ -1,12 +1,8 @@
 #!/bin/bash
 
-<<<<<<< HEAD:opioid/submit_depend.sh
 # this allows for the submission of serial jobs on a qsub system
 # jobs must look like this: script_root[R_0:R_F]
-=======
-# this allows for the submission of serially dependent jobs on a qsub system
-# jobs must look like this: script_root[R_0:R_F].sh
->>>>>>> 3e4bde25181da978cf8fb687461e6e4cb8e14c52:opioid/submit_depend.sh
+#
 # jobs must be okay with the same type of follow specifications
 #   eg afterany v afterok etc.
 
@@ -46,7 +42,6 @@ done
 if [ $HFLAG -eq 0 ]
 then
     PREV_JERB=$JOB_0
-<<<<<<< HEAD:opioid/submit_depend.sh
     echo $PREV_JERB
     for i in $(seq $R_0 $R_F); do
         SUB="${SCRIPT_ROOT}${i}.sh"
@@ -56,11 +51,5 @@ then
         PREV_JERB=$JERB
         echo $PREV_JERB
         echo "----"
-=======
-    for i in $(seq $R_0 $R_F); do
-        SUB="${SCRIPT_ROOT}${i}.sh"
-        JERB=$(qsub -W depend=afterany:$PREV_JERB $SUB)
-        PREV_JERB=$JERB
->>>>>>> 3e4bde25181da978cf8fb687461e6e4cb8e14c52:opioid/submit_depend.sh
     done
 fi

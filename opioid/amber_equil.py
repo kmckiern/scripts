@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 """
-This script is used for generating all of the files and scripts necessary for running two 
-cycles of gpcr equilibration on titan using amber12 and ambertools12.
+This script is for generation of production trajectories.
+Borrowed heavily from Morgan.
 
 Steps:
 read in list of input pdbs in a given directory
@@ -20,6 +20,9 @@ updates prmtop file just before the start of the second minimization.
 
 example usage:
     >> ./amber_equil.py --root_dir path/to/root/dir --ligand oxy --rst --e1
+
+ex 2:
+    >> for i in {61..70}; do python gen_amb.py --root_dir path/meh --ligand nal --script_name long --template eq_gpu_cont.sh --cyc $i --pdb_sub_dir all; done
 """
 
 import subprocess as subp
@@ -32,6 +35,7 @@ import copy
 parser = argparse.ArgumentParser(description='Set up serial AMBER equilibration of GPCR system')
 parser.add_argument('--root_dir', type=str, help='Input root file directory')
 parser.add_argument('--pdb_sub_dir', type=str, help='Input pdb file directory')
+parser.add_argument('--jerb_sub_dir', type=str, help='Jerb sub directory', default=None)
 parser.add_argument('--ligand', type=str, help='oxy, nal, or dmt')
 parser.add_argument('--script_name', type=str, help='Name of run script')
 parser.add_argument('--template', type=str, help='Name of template script')
@@ -98,7 +102,11 @@ def fill_template(template_file, script_destination, ext, replacement_map, multi
                     else:
                             for region in l:
                                 if region in replacement_map:
-                                    l[l.index(region)] = replacement_map[region]
+                                    r_map = replacement_map[region]
+                                    if isinstance(r_map, list):
+                                        l[l.index(region)] = r_map[0]
+                                    else:
+                                        l[l.index(region)] = r_map
                             of.write(''.join(l))
                 else:
                     for region in l:
@@ -109,9 +117,11 @@ def fill_template(template_file, script_destination, ext, replacement_map, multi
                 of.write(line)
     return out_file
 
-def gen_leaprc(template_file, lig, pdb_dir, pdb_pref, job_dir, leap_dir, rc_suffix, box_list=None):
+def gen_leaprc(template_file, lig, pdb_dir, pdb_pref, job_dir, leap_dir, rc_suffix, cyc, box_list=None):
     # create replacement_map using function inputs
-    rm = {'LIG': lig.lower(), 'PDB_DIR': pdb_dir, 'PDB_PREF': pdb_pref, 'JOB_DIR': job_dir}
+    c_val = 'c' + cyc
+    c_m1 = 'c' + str(int(cyc)-1)
+    rm = {'LIG': lig.lower(), 'PDB_DIR': pdb_dir, 'PDB_PREF': pdb_pref, 'JOB_DIR': job_dir, 'CYCLE_NUM': c_val, 'CYCLE_MONE': c_m1}
     if box_list:
         # get rst box dimensions.
         rm['BOXX'], rm['BOXY'], rm['BOXZ'] = box_list
@@ -119,11 +129,13 @@ def gen_leaprc(template_file, lig, pdb_dir, pdb_pref, job_dir, leap_dir, rc_suff
     leaprc = fill_template(template_file, leap_dir, rc_suffix, rm)
     return leaprc
 
-def gen_equil(template_file, leap_dir, leaprc, job_dir, script_dir, min_pref, pdb_pref, nvt_in, npt_in, equil_pref, gen_dir, c_val):
+def gen_equil(template_file, leap_dir, leaprc, job_dir, script_dir, min_pref, pdb_pref, nvt_in, npt_in, equil_pref, gen_dir, cyc, prod_pref):
+    c_val = 'c' + cyc
+    c_m1 = 'c' + str(int(cyc)-1)
     ext = '_' + c_val + '.sh'
     job_name = opts.script_name
     # populate template variable map
-    rm = {'FULL_JOB_NAME': job_name, 'LEAP_DIR': leap_dir, 'LEAPRC': leaprc, 'JOB_DIR': job_dir, 'IN_DIR': script_dir, 'MIN_PREF': min_pref, 'PDB_PREF': pdb_pref, 'H1_PREF': nvt_in, 'H2_PREF': npt_in, 'EQUIL_PREF': equil_pref, 'CYCLE_NUM': c_val}
+    rm = {'FULL_JOB_NAME': job_name, 'LEAP_DIR': leap_dir, 'LEAPRC': leaprc, 'JOB_DIR': job_dir, 'IN_DIR': script_dir, 'MIN_PREF': min_pref, 'PDB_PREF': pdb_pref, 'H1_PREF': nvt_in, 'H2_PREF': npt_in, 'EQUIL_PREF': equil_pref, 'CYCLE_NUM': c_val, 'CYCLE_MONE': c_m1,  'PROD_PREF': prod_pref}
     # generate script from template
     ec = fill_template(template_file, gen_dir, ext, rm, pdb_pref)
     return ec
@@ -132,16 +144,23 @@ def main():
     # formatting paths
     # is it better to have less option typing by mandating directory name conventions?
     root = opts.root_dir
-    sub_d = opts.pdb_sub_dir.strip()
+    sd = opts.pdb_sub_dir
+    if sd is not None:
+        sub_d = sd.strip()
+        pd = format_path(root, 'pdbs/' + sub_d)
+    else:
+        pd = format_path(root, 'pdbs/')
     cycle = opts.cyc
     pcycle = str(int(opts.cyc)-1)
 
-    pd = format_path(root, 'pdbs/' + sub_d)
     rd = format_path(root, 'rst_files')
     ld = format_path(root, 'leap_src')
     sd = format_path(root, 'static_scripts')
     od = format_path(root, 'run_scripts')
-    jr = format_path(root, 'jerbs')
+    if opts.jerb_sub_dir == None:
+        jr = format_path(root, 'jerbs')
+    else:
+        jr = format_path(root, 'jerbs/' + opts.jerb_sub_dir)
 
     # pulling relevant files
     pdb_files = [p for p in os.listdir(pd) if '.pdb' in p]
@@ -155,45 +174,49 @@ def main():
         # format a bit
         f = f.replace('.', '_').replace('-', '_')
 
-        # create job directory
-        jd = gen_job_dir(jr, f)
-
         # setup directory
         if opts.rst:
+            # create job directory
+            jd = gen_job_dir(jr, f)
             # move restraint file
             for rf in restraint_files:
                 rf_path = rd + rf
                 shutil.copy2(rf_path, jd)
-
-        # generate all submission scripts
-        # gen subsequent equil cycle sub script
-        if int(cycle) > 1:
-            er = 'equil_c' + pcycle + '.rst'
-            h2r = 'h2_npt_c' + pcycle + '.rst'
-            h1r = 'h1_nvt_c' + pcycle + '.rst'
-            # get the final coordinates of the last restart box.
-            # determine last non-empty restart file.
-            rst_files = [outf for outf in os.listdir(jd) if '.rst' in outf and os.path.getsize(jd + outf) > 0]
-            if er in rst_files:
-                rst_file = er
-            elif h2r in rst_files:
-                rst_file = h2r
-            elif h1r in rst_files:
-                rst_file = h1r
-            else:
-                rst_file = None
-                leaprc = None
-            if rst_file:
-                box_dims = subp.Popen(['tail', '-n', '1', jd + rst_file], stdout=subp.PIPE).communicate()[0].split()[0:3]
-                b_d = [str(int(math.ceil(float(i)))) for i in box_dims]
-                # create leaprc
-                leap_template = sd + 'leaprc_c' + cycle
-                leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_' + f + '_leaprc_c' + cycle, b_d)
         else:
-            # gen first equilibration cycle submission script
-            # create leaprc
-            leap_template = sd + 'leaprc_c1'
-            leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_' + f + '_leaprc_c1')
+            jd = format_path(jr, f)
+
+        if opts.leap:
+            # generate all submission scripts
+            # gen subsequent equil cycle sub script
+            if int(cycle) > 1:
+                er = 'equil_c' + pcycle + '.rst'
+                h2r = 'h2_npt_c' + pcycle + '.rst'
+                h1r = 'h1_nvt_c' + pcycle + '.rst'
+                # get the final coordinates of the last restart box.
+                # determine last non-empty restart file.
+                rst_files = [outf for outf in os.listdir(jd) if '.rst' in outf and os.path.getsize(jd + outf) > 0]
+                if er in rst_files:
+                    rst_file = er
+                elif h2r in rst_files:
+                    rst_file = h2r
+                elif h1r in rst_files:
+                    rst_file = h1r
+                else:
+                    rst_file = None
+                    leaprc = None
+                if rst_file:
+                    box_dims = subp.Popen(['tail', '-n', '1', jd + rst_file], stdout=subp.PIPE).communicate()[0].split()[0:3]
+                    b_d = [str(int(math.ceil(float(i)))) for i in box_dims]
+                    # create leaprc
+                    leap_template = sd + 'leaprc_c' + cycle
+                    leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_' + f + '_leaprc_c' + cycle, b_d)
+            else:
+                # gen first equilibration cycle submission script
+                # create leaprc
+                leap_template = sd + 'leaprc'
+                leaprc = gen_leaprc(leap_template, opts.ligand, pd, f, jd, ld, '_' + f + '_leaprc', cycle)
+        else:
+            leaprc = None
 
         # record data
         if j == 0:
@@ -205,7 +228,7 @@ def main():
             jds.append(jd)
             prefs.append(f)
 
-    ec_script = gen_equil(sd + opts.template, ld, lrc, jds, sd, 'min', prefs, 'h1_nvt', 'h2_npt', 'equil', od, 'c' + cycle)
+    ec_script = gen_equil(sd + opts.template, ld, lrc, jds, sd, 'min', prefs, 'h1_nvt', 'h2_npt', 'equil', od, cycle, 'prod')
 
 if __name__ == '__main__':
     main()

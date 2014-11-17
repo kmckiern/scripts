@@ -1,3 +1,5 @@
+import re
+
 def natural_sort(l):
     """ From stack overflow: Natural sorting of a list (so 11 comes after 7) """
     convert = lambda text: int(text) if text.isdigit() else text.lower()

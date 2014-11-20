@@ -34,7 +34,7 @@ def parse(input_file, col1, col2):
     return time, al
 
 def main():
-    input_file = args.edr
+    input_file = args.xvg
     col1 = int(args.col)
     col2 = (col1 + 1)
     t = args.temp

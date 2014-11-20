@@ -5,14 +5,15 @@ import sys
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--edr')
+parser.add_argument('--xvg')
 parser.add_argument('--col')
 parser.add_argument('--temp')
+parser.add_argument('--nl', default=128)
 parser.add_argument('--save_al', action='store_true')
 args = parser.parse_args()
 
 k = 1.3806488e-23
-nl = 64
+nl = int(args.nl) / 2
 
 # Parses rvc file.
 def parse(input_file, col1, col2):
@@ -29,7 +30,7 @@ def parse(input_file, col1, col2):
     time = np.array(time)
     rel1 = np.array(rel)
     rel2 = np.array(rel)
-    al = (rel1 * rel2)/64
+    al = (rel1 * rel2)/nl
     return time, al
 
 def main():

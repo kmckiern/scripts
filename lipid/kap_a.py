@@ -24,12 +24,15 @@ def parse(input_file, col1, col2):
     # Read in each line of the input file.
     for line in data:
         l = line.split()
-        time.append[float(l[0])]
-        rel1.append[float(l[1])]
-        rel2.append[float(l[2])]
+        if l[0].startswith('#') or line.startswith('@'):
+            continue
+        else:
+            time.append(float(l[0]))
+            rel1.append(float(l[1]))
+            rel2.append(float(l[2]))
     time = np.array(time)
-    rel1 = np.array(rel)
-    rel2 = np.array(rel)
+    rel1 = np.array(rel1)
+    rel2 = np.array(rel2)
     al = (rel1 * rel2)/nl
     return time, al
 
@@ -37,11 +40,11 @@ def main():
     input_file = args.xvg
     col1 = int(args.col)
     col2 = (col1 + 1)
-    t = args.temp
+    t = float(args.temp)
 
     time, al = parse(input_file, col1, col2)
     if args.save_al:
-        np.savetxt('al_ts_%i.xvg' % t, zip(timw, al))
+        np.savetxt('al_ts_%i.xvg' % t, zip(time, al))
 
     avg = np.average(al)
     fluc = np.average(al**2) - avg**2

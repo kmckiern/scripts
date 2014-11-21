@@ -18,4 +18,4 @@ for i in trjs[1:]:
     z = z + ts[i][-1]
 
 # save combined data
-zp.save_pdb('out.pdb')
+z.save_pdb('out.pdb')

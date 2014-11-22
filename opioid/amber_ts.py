@@ -87,7 +87,7 @@ def parse_out(of, props):
                     for ndx, ent in enumerate(l):
                         if ent in props:
                             data_arr[frame, props[ent]] = float(l[ndx + 2])
-                elif l[0].startswith('======='):
+                elif l[0].startswith('-------'):
                     frame += 1
         # skip over everything before results section
         elif l[-1] == 'RESULTS':

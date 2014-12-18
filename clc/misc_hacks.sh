@@ -10,7 +10,7 @@ for i in "${STDIN[@]}"; do
     sed -i '.bak1' 's/ OT2 / OXT /g' $i
 
     # ter between chains
-    sed -i '.bak' '/OXT GLN/a\
+    sed -i '.bak' '/OXT /a\
     TER\
     '  $i
 

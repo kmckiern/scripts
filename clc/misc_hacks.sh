@@ -9,6 +9,11 @@ for i in "${STDIN[@]}"; do
     sed -i '.bak1' 's/ OT1 / O   /g' $i
     sed -i '.bak1' 's/ OT2 / OXT /g' $i
 
+    # ter between chains
+    sed -i '.bak' '/OXT GLN/a\
+    TER\
+    '  $i
+
     # hist protonation
     sed -i '.bak1' 's/ HSD / HIS /g' $i
 

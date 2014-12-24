@@ -13,6 +13,8 @@ while read LINE; do
     if [[ "$LINE" == ";"* ]]; then
         continue
     else
-        grep -i -A 1 $LINE $SEQS >> $PARSED
+        # specific to homodimers but whatevs
+        grep -i -A 1 ${LINE}_A $SEQS >> $PARSED
+        grep -i -A 1 ${LINE}_B $SEQS >> $PARSED
     fi
 done < $INPDB

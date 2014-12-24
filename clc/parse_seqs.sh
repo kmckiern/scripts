@@ -13,6 +13,6 @@ while read LINE; do
     if [[ "$LINE" == ";"* ]]; then
         continue
     else
-        grep -A 1 $LINE $SEQS >> $PARSED
+        grep -i -A 1 $LINE $SEQS >> $PARSED
     fi
 done < $INPDB

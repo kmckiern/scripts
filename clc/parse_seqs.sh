@@ -14,4 +14,5 @@ while read LINE; do
         continue
     else
         grep -A 1 $LINE $SEQS >> $PARSED
+    fi
 done < $INPDB

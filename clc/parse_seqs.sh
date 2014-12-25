@@ -16,7 +16,6 @@ while read LINE; do
         echo ">P1;${LINE}" >> $PARSED
         echo "sequence:::::::::" >> $PARSED
         # specific to homodimers but whatevs
-        grep -i -A 1 ${LINE}_A $SEQS | tail -n 1 >> $PARSED
-        grep -i -A 1 ${LINE}_B $SEQS | tail -n 1 >> $PARSED
+        echo `grep -i -A 1 ${LINE}_A $SEQS | tail -n 1; grep -i -A 1 ${LINE}_B $SEQS | tail -n 1; echo '\*'` >> $PARSED
     fi
 done < $INPDB

@@ -21,3 +21,5 @@ while read LINE; do
 done < $INPDB
 
 sed -i ".bak" "s/ endmarque/\*/g" $PARSED
+# os x is stupid.
+rm ${PARSED}.bak

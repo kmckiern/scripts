@@ -23,7 +23,16 @@ def structures(af):
         labels.append(l.split('|')[3])
     return lines, labels
 
+def gen_pir(struc, nl):
+    algnment = subp.Popen(['grep', '-A', nl, struc, 'jt.pir'], stdout=subp.PIPE).communicate()[0]
+    
+
 def main():
+    ln, pdbs = structures(args.a)
+    for i, p in enumerate(pdbs):
+        after = ln[i+1] - ln[i] - 1
+        f = gen_pir(p, after)
+        os.
 
 if __name__ == '__main__':
     main()

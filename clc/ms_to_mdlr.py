@@ -3,34 +3,35 @@
 # parse ncbi alignment file for modeller
 
 import subprocess as subp
-import os
 import argparse
-# from toolz import call_cml
+import sys
+from toolz import call_cml
 
 parser = argparse.ArgumentParser(description='parse ncbi ms alignment file for modeller')
 parser.add_argument('--a', type=str, help='ncbi alignment file')
 parser.add_argument('--s', type=str, help='sequence file')
 args = parser.parse_args()
 
-# def get_stuff(call):
-#     return call_cml(call).split('\n')[:-1]
+def get_stuff(call):
+     return call_cml(call).split('\n')[:-1]
 
 # this prob isn't pythonic but w/e.
 def structures(af):
-    entry_data = subp.Popen(['grep', '-n', 'pdb', af], stdout=subp.PIPE).communicate()[0].split('\n')[:-1]
+    entry_data = get_stuff('grep -n pdb %s' % af) 
     lines = []
     labels = []
     for l in entry_data:
         lines.append(int(l.split(':')[0]))
         labels.append(l.split('|')[3])
-    lines.append(27)
+    last = get_stuff('wc %s' % af)
+    lines.append(int(last[0].split()[0])+1)
     return lines, labels
 
 def gen_ali(af, struc, nl):
-    algmt = subp.Popen(['grep', '-A', nl, struc, af], stdout=subp.PIPE).communicate()[0].split('\n')
+    algmt = get_stuff('grep -A %s %s %s' % (nl, struc, af)) 
     algmt.insert(1, 'structure:%s.pdb::::::::' % struc)
     f = open('%s.ali' % struc, 'w')
-    for info in algmt[:-1]:
+    for info in algmt:
         f.write('%s\n' % info)
     return f
 

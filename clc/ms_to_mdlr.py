@@ -8,7 +8,7 @@ import argparse
 import numpy as np
 from fmt_path import format_path
 
-parser = argparse.ArgumentParser(description='Amber output file property plotter')
+parser = argparse.ArgumentParser(description='parse ncbi ms alignment file for modeller')
 parser.add_argument('--a', type=str, help='ncbi alignment file')
 parser.add_argument('--s', type=str, help='sequence file')
 args = parser.parse_args()
@@ -23,16 +23,22 @@ def structures(af):
         labels.append(l.split('|')[3])
     return lines, labels
 
-def gen_pir(struc, nl):
-    algnment = subp.Popen(['grep', '-A', nl, struc, 'jt.pir'], stdout=subp.PIPE).communicate()[0]
-    
+def gen_ali(struc, nl):
+    algmt = subp.Popen(['grep', '-A', nl, struc, 'jt.pir'], stdout=subp.PIPE).communicate()[0].split('\n')
+    algmt.insert(1, 'structure:%s.pdb::::::::' % struc)
+    f = open('%s.ali' % struc, 'w')
+    for info in algmt[:-1]:
+        f.write('%s\n' % info)
+    return f
 
 def main():
+    seq = args.s.readlines()
     ln, pdbs = structures(args.a)
     for i, p in enumerate(pdbs):
         after = ln[i+1] - ln[i] - 1
-        f = gen_pir(p, after)
-        os.
+        ali = gen_ali(p, after)
+        with open(ali, 'a') as f:
+            f.write(seq)
 
 if __name__ == '__main__':
     main()

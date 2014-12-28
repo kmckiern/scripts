@@ -15,6 +15,12 @@ parser.add_argument('--o', type=str, help='name of output file')
 parser.add_argument('--dims', type=str, help='desired pdb dimensions (comma separated)')
 args = parser.parse_args()
 
+def unit_slice(unit_cell, scalings):
+    return [sx, sy, sz]
+
+def trans(unit_cell, slices):
+    return None
+
 def main():
     # read in input
     p = mdtraj.load(args.i)
@@ -23,10 +29,12 @@ def main():
     d0 = p.unitcell_vectors
     # determine needed scaling
     scale = np.array([int(i) for i in args.dims.split(',')])
-    gx, gy, gz = np.diagonal(d0[0]/sc)
+    rep = np.diagonal(d0[0]/sc)
 
     # get atom slice according to specified scaling
+    slices = unit_slice(p, rep)
     # shift slice along lattice vector
+    trans(p, slices)
 
     # write output
     p.save_pdb(args.o)

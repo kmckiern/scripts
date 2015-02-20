@@ -12,6 +12,7 @@ import copy
 
 parser = argparse.ArgumentParser(description='replicate crystal pdb to arbitrary size')
 parser.add_argument('--p', type=str, help='input pdb file')
+parser.add_argument('--b', type=str, help='big input pdb file')
 parser.add_argument('--t', type=str, help='input trj')
 parser.add_argument('--m', type=int, help='molecule to center')
 parser.add_argument('--cd', type=str, help='distance beyond which molecules are cut')
@@ -36,13 +37,32 @@ def image_trj(trj):
     rank3 = rank2.stack(sandwich(rank2, 2))
     return rank3
 
+def indx_dists(trj, center_mol, cut):
+    nmols = trj.xyz.shape[1]
+    pairs = np.zeros((nmols, 2))
+    pairs[:,0] = np.arange(nmols)
+    pairs[:,1] = center_mol*np.ones(nmols)
+    ds = mdtraj.compute_distances(trj, pairs)
+    return [i for i in ds if i < cut]
+
 def main():
     # get input
     p = mdtraj.load(args.t, top=args.p)
 
     # image
     p_im = image_trj(p)
-    p_im[0].save_pdb('maybe.pdb')
+    p_im[0].save_pdb('zero.pdb')
+    p_im.save_dcd('big.dcd')
+
+    # couldn't figure out how to merge chains w/o chimera
+    p_big = mdtraj.load('big.dcd', top='ftlog.pdb')
+    # fix first oxygen
+    msel = p_big.xyz[:,0,:]
+    # shift coords
+    for t in range(p_big.xyz.shape[0]):
+        p_big.xyz[t] -= msel[i]
+    # write new dcd
+    p_big.write_dcd('shifted.dcd')
 
 if __name__ == '__main__':
     main()

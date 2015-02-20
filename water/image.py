@@ -8,7 +8,7 @@ example usage:
 
 import argparse
 import mdtraj
-from copy import copy
+import copy
 
 parser = argparse.ArgumentParser(description='replicate crystal pdb to arbitrary size')
 parser.add_argument('--p', type=str, help='input pdb file')
@@ -20,20 +20,20 @@ args = parser.parse_args()
 
 #def center_mol(trj, molnum):
     
-def move(trj, ndx):
-    tm = copy(trj)
-    tm.xyz -= t.unitcell_vectors[0][:,ndx]
-    tp = copy(trj)
-    tp.xyz += t.unitcell_vectors[0][:,ndx]
-    return trj.stack(tm).stack(tp)
+def sandwich(trj, ndx):
+    tm = copy.deepcopy(trj)
+    tm.xyz -= trj.unitcell_vectors[0][:,ndx]
+    tp = copy.deepcopy(trj)
+    tp.xyz += trj.unitcell_vectors[0][:,ndx]
+    return tm.stack(tp)
 
 def image_trj(trj):
     # stack x for first row
-    rank1 = trj.stack(move(trj, 0))
+    rank1 = trj.stack(sandwich(trj, 0))
     # stack y for matrix    
-    rank2 = rank1.stack(move(rank1, 1))
+    rank2 = rank1.stack(sandwich(rank1, 1))
     # now, 3d
-    rank3 = rank2.stack(move(rank2, 2))
+    rank3 = rank2.stack(sandwich(rank2, 2))
     return rank3
 
 def main():
@@ -42,7 +42,7 @@ def main():
 
     # image
     p_im = image_trj(p)
-    p_im[0].save_pbc('maybe.pdb')
+    p_im[0].save_pdb('maybe.pdb')
 
 if __name__ == '__main__':
     main()

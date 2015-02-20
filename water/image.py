@@ -60,9 +60,9 @@ def main():
     msel = p_big.xyz[:,0,:]
     # shift coords
     for t in range(p_big.xyz.shape[0]):
-        p_big.xyz[t] -= msel[i]
+        p_big.xyz[t] -= msel[t]
     # write new dcd
-    p_big.write_dcd('shifted.dcd')
+    p_big.save_dcd('shifted.dcd')
 
 if __name__ == '__main__':
     main()

@@ -5,6 +5,10 @@ feed in bilayer trj and generate output file with thermodynamic and structural c
 example usage:
     >> python /path/analyze_bilayer.py --prod_dir /path/trj_0/ --prod_pref lipid-md \
        --valid_dir tfb323/ --o temp.dat --trim 0.05 --meta_dir /path/ndx/
+
+TO DO
+1. detemine error bars
+2. plot props w experimental data
 """
 
 import argparse
@@ -80,7 +84,7 @@ def get_scd(sn, pdir, ppref, vdir, meta):
     cl_gmx(go)
     data = np.genfromtxt(vdir + 'sn' + sn + '.xvg')
     plt_ts(data[:,0], data[:,1], vdir + 'sn' + sn + '.png')
-    return data
+    return data[:,1]
 # isothermal compressibility modulus
 def get_kap(al_ts):
     avg = np.average(al_ts)
@@ -138,8 +142,16 @@ def get_fq(pdir, ppref, vdir, meta):
 def get_dl(pdir, ppref, vdir, meta):
     gdl = ['g_msd', '-s', pdir + ppref + '.tpr', '-f', pdir + ppref + '.trr', \
             '-n', meta + 'p8.ndx', '-o', vdir + 'msd.xvg', '-lateral', 'z']
-    print ' '.join(gdl)
     cl_gmx(gdl, ['P8'])
+
+def write_results(vdir, out, al, vl, scd1, scd2, kap_a):
+    f = open(vdir + out, 'w')
+    f.write('al: ', al, '\n')
+    f.write('vl: ', vl, '\n')
+    f.write('scd1: ', scd1, '\n')
+    f.write('scd2: ',  scd2, '\n')
+    f.write('kap_a: ', kap_a, '\n')
+    file.close()
 
 def main():
     pdir = args.prod_dir
@@ -165,6 +177,8 @@ def main():
     kap_a = kap_ts(d[:,0], al_ts, vdir)
     fq = get_fq(pdir, ppref, vdir, meta)
     dl = get_dl(pdir, ppref, vdir, meta)
+
+    write_results(vdir, out, al, vl, scd1, scd2, kap_a)
 
 if __name__ == '__main__':
     main()

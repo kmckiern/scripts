@@ -18,7 +18,7 @@ args = parser.parse_args()
 
 def cl_gmx(command_lst, pipe_args):
     p = Popen(command_lst, stdout=PIPE, stdin=PIPE, stderr=STDOUT)  
-    p.communicate(input=pipe_args)
+    p.communicate(input='\n'.join(pipe_args))
 
 """def parse_gmx(prop):
 
@@ -42,8 +42,8 @@ def get_dl():"""
 
 def get_struc(pdir, ppref, vdir):
     props = ['Volume', 'Box-X', 'Box-Y']
-    cl_gmx(['g_energy', '-f', pdir + ppref + '.edr', '-xvg', 'no', '-o', vdir + 'struc.xvg'], \
-            props)
+    ge = ['g_energy', '-f', pdir + ppref + '.edr', '-xvg', 'no', '-o', vdir + 'struc.xvg']
+    cl_gmx(ge, props)
 
 def main():
     pdir = args.prod_dir
@@ -51,7 +51,7 @@ def main():
     vdir = args.valid_dir
     out = args.o
 
-    get_struc(pdir, ppref, )
+    get_struc(pdir, ppref, vdir)
 
 if __name__ == '__main__':
     main()

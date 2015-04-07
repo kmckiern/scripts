@@ -15,8 +15,10 @@ import argparse
 from subprocess import Popen, PIPE, STDOUT
 import numpy as np
 import scipy.integrate as integr8
-import matplotlib.pyplot as plt
 import matplotlib as mpl
+# change x-windows backend default
+mpl.use('Agg')
+import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(description='full analysis of bilayer trajectories')
 parser.add_argument('--prod_dir', type=str, help='path to directory with trj and tpr')
@@ -40,7 +42,6 @@ wm = args.wm
 v_w = {}
 v_w['spc'] = {'323.15': 0.03070, '333.15': 0.03096, '338.15': 0.03109, '353.15': 0.03153}
 v_w['tip3pfb'] = {'323.15': 0.03043, '333.15': 0.03061, '338.15': 0.03071, '353.15': 0.03104}
-sn_ndx = {}
 
 mpl.rc('font', family = 'serif')
 mpl.rcParams['lines.linewidth'] = 1

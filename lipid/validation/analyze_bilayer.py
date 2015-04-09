@@ -31,6 +31,7 @@ parser.add_argument('--trim', type=float, help='percent to trim off of the front
 parser.add_argument('--temp', type=float, help='simulation temperature', default=323.15)
 parser.add_argument('--wm', type=str, help='water model', default='tip3pfb')
 parser.add_argument('--o', type=str, help='name of output file')
+parser.add_argument('--fix', action='store_true', help='to fix pbc artifacts')
 args = parser.parse_args()
 
 # globals.  not sure if i should bother to make these arguments
@@ -84,7 +85,7 @@ def get_vl(data, vdir):
     return vpl, vl_deets
 # deuterium order parameter
 def get_scd(sn, pdir, ppref, vdir, meta):
-    go = ['g_order', '-s', pdir + ppref + '.tpr', '-f', pdir + ppref + '.trr', '-n', \
+    go = ['g_order', '-s', pdir + ppref + '.tpr', '-f', pdir + ppref + '_c.trr', '-n', \
           meta + 'sn' + sn + '.ndx', '-od', vdir + 'sn' + sn + '.xvg', '-xvg', 'no']
     cl_gmx(go)
     data = np.genfromtxt(vdir + 'sn' + sn + '.xvg')
@@ -117,7 +118,7 @@ def calc_fq_real(rho_dehyd, q):
     return integr8.trapz(rho_dehyd[:,1] * np.cos(q * rho_dehyd[:,0]), rho_dehyd[:,0])
 def get_fq(pdir, ppref, vdir, meta): 
     # gen EDP
-    gedp = ['g_density', '-s', pdir + ppref + '.tpr', '-f', pdir + ppref + '.trr', '-ei', \
+    gedp = ['g_density', '-s', pdir + ppref + '.tpr', '-f', pdir + ppref + '_c.trr', '-ei', \
             meta + 'electrons.dat', '-o', vdir + 'epd.xvg', '-xvg', 'no', '-dens', \
            'electron', '-symm', '-sl', '600']
     cl_gmx(gedp, ['System'])
@@ -149,7 +150,7 @@ def get_fq(pdir, ppref, vdir, meta):
     return f_q, rescale_sys
 # diffusion constant
 def get_dl(pdir, ppref, vdir, meta):
-    gdl = ['g_msd', '-s', pdir + ppref + '.tpr', '-f', pdir + ppref + '.trr', \
+    gdl = ['g_msd', '-s', pdir + ppref + '.tpr', '-f', pdir + ppref + '_c.trr', \
             '-n', meta + 'p8.ndx', '-o', vdir + 'msd.xvg', '-lateral', 'z']
     cl_gmx(gdl, ['P8'])
 
@@ -167,6 +168,12 @@ def main():
     trim = args.trim
     out = args.o
     meta = args.meta_dir
+
+    # fix pbc artifacts
+    if fix:
+        gpbc = ['trjconv', '-s', pdir + ppref + '.tpr', '-f', pdir + ppref + '_c.trr', \
+               '-pbc', 'mol', '-o', pdir + ppref + '_c.trr']
+        cl_gmx(gpbc, ['System'])
 
     props = ['Volume', 'Box-X', 'Box-Y']
     ge = ['g_energy', '-f', pdir + ppref + '.edr', '-xvg', 'no', '-o', vdir + gmx_temp]

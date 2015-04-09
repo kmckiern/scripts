@@ -67,7 +67,14 @@ def plt_save(t, ts, name):
 def cl_gmx(command_lst, pipe_args=[]):
     p = Popen(command_lst, stdout=PIPE, stdin=PIPE, stderr=STDOUT)  
     p.communicate(input='\n'.join(pipe_args))
+def write_results(vdir, out, al, vl, kap_a):
+    f = open(vdir + out, 'w')
+    f.write('al: ' + str(al[0]) + '+-' + str(al[1]) + '\n')
+    f.write('vl: ' + str(vl[0]) + '+-' + str(vl[1]) + '\n')
+    f.write('kap: ' + str(kap[0]) + '+-' + str(kap[1]) + '\n')
+    f.close()
 
+# therm0
 # area per lipid
 def get_al(data, vdir):
     t = data[:,0]
@@ -137,7 +144,7 @@ def get_fq(pdir, ppref, vdir, meta):
     # subtract bulk water electron density
     dehy_sys = np.zeros(rescale_sys.shape)
     dehy_sys[:,0] = rescale_sys[:,0]
-    dehy_sys[:,1] = (rescale_sys[:,1] - rescale_sys[:,1][-1])/1000 # Angstroms.
+    dehy_sys[:,1] = (rescale_sys[:,1] - rescale_sys[:,1][-1]) / 1000.0 # angstroms
     # FT the data
     q_vec = np.linspace(0, 1, num = 1000)
     f_q = np.zeros((len(q_vec),2))
@@ -150,20 +157,14 @@ def get_fq(pdir, ppref, vdir, meta):
     return f_q, rescale_sys
 # diffusion constant
 def get_dl(pdir, ppref, vdir, meta, len):
-    start = len*.1
-    end = len*.35
+    start = str(int(len*.1))
+    end = str(int(len*.3))
     gdl = ['g_msd', '-s', pdir + ppref + '.tpr', '-f', pdir + ppref + '_c.trr', \
             '-n', meta + 'p8.ndx', '-o', vdir + 'msd.xvg', '-lateral', 'z', \
             '-b', start, '-e', end]
     cl_gmx(gdl, ['P8'])
 
-def write_results(vdir, out, al, vl, kap_a):
-    f = open(vdir + out, 'w')
-    f.write('al: ' + str(al[0]) + '+-' + str(al[1]) + '\n')
-    f.write('vl: ' + str(vl[0]) + '+-' + str(vl[1]) + '\n')
-    f.write('kap: ' + str(kap[0]) + '+-' + str(kap[1]) + '\n')
-    f.close()
-
+# let me see if you can run it, run it
 def main():
     pdir = args.prod_dir
     ppref = args.prod_pref
@@ -174,7 +175,7 @@ def main():
 
     # fix pbc artifacts
     if args.fix:
-        gpbc = ['trjconv', '-s', pdir + ppref + '.tpr', '-f', pdir + ppref + '_c.trr', \
+        gpbc = ['trjconv', '-s', pdir + ppref + '.tpr', '-f', pdir + ppref + '.trr', \
                '-pbc', 'nojump', '-o', pdir + ppref + '_c.trr']
         cl_gmx(gpbc, ['System'])
 

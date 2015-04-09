@@ -67,7 +67,7 @@ def plt_save(t, ts, name):
 def cl_gmx(command_lst, pipe_args=[]):
     p = Popen(command_lst, stdout=PIPE, stdin=PIPE, stderr=STDOUT)  
     p.communicate(input='\n'.join(pipe_args))
-def write_results(vdir, out, al, vl, kap_a):
+def write_results(vdir, out, al, vl, kap):
     f = open(vdir + out, 'w')
     f.write('al: ' + str(al[0]) + '+-' + str(al[1]) + '\n')
     f.write('vl: ' + str(vl[0]) + '+-' + str(vl[1]) + '\n')
@@ -161,8 +161,8 @@ def get_dl(pdir, ppref, vdir, meta, len):
     end = str(int(len*.3))
     gdl = ['g_msd', '-s', pdir + ppref + '.tpr', '-f', pdir + ppref + '_c.trr', \
             '-n', meta + 'p8.ndx', '-o', vdir + 'msd.xvg', '-lateral', 'z', \
-            '-b', start, '-e', end]
-    cl_gmx(gdl, ['P8'])
+            '-b', start, '-e', end, '-rmcomm']
+    cl_gmx(gdl, ['P8', 'P8'])
 
 # let me see if you can run it, run it
 def main():
@@ -193,10 +193,11 @@ def main():
     scd1 = get_scd('1', pdir, ppref, vdir, meta)
     scd2 = get_scd('2', pdir, ppref, vdir, meta)
     kap, kap_deets = kap_ts(d[:,0], al_ts, vdir)
+    special_kap = (kap, kap_deets[-1])
     fq = get_fq(pdir, ppref, vdir, meta)
     dl = get_dl(pdir, ppref, vdir, meta, L)
 
-    write_results(vdir, out, al_deets, vl_deets, kap_deets)
+    write_results(vdir, out, al_deets, vl_deets, special_kap)
 
 if __name__ == '__main__':
     main()

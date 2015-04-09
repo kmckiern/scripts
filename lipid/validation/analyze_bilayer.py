@@ -149,9 +149,12 @@ def get_fq(pdir, ppref, vdir, meta):
     plt_save(rescale_sys[:,0], rescale_sys[:,1], vdir + 'edp')
     return f_q, rescale_sys
 # diffusion constant
-def get_dl(pdir, ppref, vdir, meta):
+def get_dl(pdir, ppref, vdir, meta, len):
+    start = len*.1
+    end = len*.35
     gdl = ['g_msd', '-s', pdir + ppref + '.tpr', '-f', pdir + ppref + '_c.trr', \
-            '-n', meta + 'p8.ndx', '-o', vdir + 'msd.xvg', '-lateral', 'z']
+            '-n', meta + 'p8.ndx', '-o', vdir + 'msd.xvg', '-lateral', 'z', \
+            '-b', start, '-e', end]
     cl_gmx(gdl, ['P8'])
 
 def write_results(vdir, out, al, vl, kap_a):
@@ -179,8 +182,9 @@ def main():
     ge = ['g_energy', '-f', pdir + ppref + '.edr', '-xvg', 'no', '-o', vdir + gmx_temp]
     cl_gmx(ge, props)
     data = np.genfromtxt(vdir + gmx_temp)
+    L = len(data)
     if trim > 0.0:
-        d = data[trim*len(data):]
+        d = data[trim*L:]
     else:
         d = data
     al_ts, al_deets = get_al(d, vdir)
@@ -189,7 +193,7 @@ def main():
     scd2 = get_scd('2', pdir, ppref, vdir, meta)
     kap, kap_deets = kap_ts(d[:,0], al_ts, vdir)
     fq = get_fq(pdir, ppref, vdir, meta)
-    dl = get_dl(pdir, ppref, vdir, meta)
+    dl = get_dl(pdir, ppref, vdir, meta, L)
 
     write_results(vdir, out, al_deets, vl_deets, kap_deets)
 

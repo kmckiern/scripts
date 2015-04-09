@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# this allows for the submission of serially dependent jobs on a qsub system
-# jobs must look like this: script_root[R_0:R_F].sh
+# this allows for the submission of serial jobs on a qsub system
+# jobs must look like this: script_root[R_0:R_F]
+#
 # jobs must be okay with the same type of follow specifications
 #   eg afterany v afterok etc.
 
@@ -41,9 +42,14 @@ done
 if [ $HFLAG -eq 0 ]
 then
     PREV_JERB=$JOB_0
+    echo $PREV_JERB
     for i in $(seq $R_0 $R_F); do
         SUB="${SCRIPT_ROOT}${i}.sh"
+        echo $SUB
         JERB=$(qsub -W depend=afterany:$PREV_JERB $SUB)
+        echo $JERB
         PREV_JERB=$JERB
+        echo $PREV_JERB
+        echo "----"
     done
 fi

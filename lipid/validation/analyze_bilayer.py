@@ -15,6 +15,8 @@ import argparse
 from subprocess import Popen, PIPE, STDOUT
 import numpy as np
 import scipy.integrate as integr8
+from forcebalance.nifty import statisticalInefficiency
+from forcebalance.nifty import mean_stderr
 import matplotlib as mpl
 # change x-windows backend default
 mpl.use('Agg')
@@ -70,20 +72,23 @@ def get_al(data, vdir):
     t = data[:,0]
     apl = data[:,1]*data[:,2]/(n_lip/2.0)
     plt_save(t, apl, vdir + 'al')
-    return apl
+    al_deets = mean_stderr(apl)
+    return apl, al_deets
 # volume per lipid
 def get_vl(data, vdir):
     t = data[:,0]
     # lazy for now
     vpl = (data[:,3] - (n_h2o * v_w[wm][str(temp)]))/n_lip
     plt_save(t, vpl, vdir + 'vl')
-    return np.mean(vpl)
+    vl_deets = mean_stderr(vpl)
+    return vpl, vl_deets
 # deuterium order parameter
 def get_scd(sn, pdir, ppref, vdir, meta):
     go = ['g_order', '-s', pdir + ppref + '.tpr', '-f', pdir + ppref + '.trr', '-n', \
           meta + 'sn' + sn + '.ndx', '-od', vdir + 'sn' + sn + '.xvg', '-xvg', 'no']
     cl_gmx(go)
     data = np.genfromtxt(vdir + 'sn' + sn + '.xvg')
+    # this is not a ts so idk how to get error bars
     plt_ts(data[:,0], data[:,1], vdir + 'sn' + sn + '.png')
     return data[:,1]
 # isothermal compressibility modulus
@@ -92,7 +97,9 @@ def get_kap(al_ts):
     fluc = np.average(al_ts**2) - avg**2
     kap = 1e3 * (2 * k * temp / n_lip) * (avg * 1.0 / fluc)
     return kap
-def kap_ts(time, al_ts, vdir):
+def kap_ts(time, alts, vdir):
+    # correct units
+    al_ts = alts * 1e-18
     kap_ts = [0]
     for t in range(len(al_ts)):
         if t == 0:
@@ -103,7 +110,8 @@ def kap_ts(time, al_ts, vdir):
     # flucs are too crazy to plot beginning
     s0 = len(kap)*.25
     plt_save(time[s0:], kap[s0:], vdir + 'kap')
-    return np.mean(kap)
+    kap_deets = mean_stderr(kap)
+    return kap[-1], kap_deets
 # x-ray structure factor
 def calc_fq_real(rho_dehyd, q):
     return integr8.trapz(rho_dehyd[:,1] * np.cos(q * rho_dehyd[:,0]), rho_dehyd[:,0])
@@ -145,14 +153,12 @@ def get_dl(pdir, ppref, vdir, meta):
             '-n', meta + 'p8.ndx', '-o', vdir + 'msd.xvg', '-lateral', 'z']
     cl_gmx(gdl, ['P8'])
 
-def write_results(vdir, out, al, vl, scd1, scd2, kap_a):
+def write_results(vdir, out, al, vl, kap_a):
     f = open(vdir + out, 'w')
-    f.write('al: ', al, '\n')
-    f.write('vl: ', vl, '\n')
-    f.write('scd1: ', scd1, '\n')
-    f.write('scd2: ',  scd2, '\n')
-    f.write('kap_a: ', kap_a, '\n')
-    file.close()
+    f.write('al: ' + str(al[0]) + '+-' + str(al[1]) + '\n')
+    f.write('vl: ' + str(vl[0]) + '+-' + str(vl[1]) + '\n')
+    f.write('kap: ' + str(kap[0]) + '+-' + str(kap[1]) + '\n')
+    f.close()
 
 def main():
     pdir = args.prod_dir
@@ -170,16 +176,15 @@ def main():
         d = data[trim*len(data):]
     else:
         d = data
-    al_ts = get_al(d, vdir)
-    al = np.mean(al_ts)
-    vl = get_vl(d, vdir)
+    al_ts, al_deets = get_al(d, vdir)
+    vl_ts, vl_deets = get_vl(d, vdir)
     scd1 = get_scd('1', pdir, ppref, vdir, meta)
     scd2 = get_scd('2', pdir, ppref, vdir, meta)
-    kap_a = kap_ts(d[:,0], al_ts, vdir)
+    kap, kap_deets = kap_ts(d[:,0], al_ts, vdir)
     fq = get_fq(pdir, ppref, vdir, meta)
     dl = get_dl(pdir, ppref, vdir, meta)
 
-    write_results(vdir, out, al, vl, scd1, scd2, kap_a)
+    write_results(vdir, out, al_deets, vl_deets, kap_deets)
 
 if __name__ == '__main__':
     main()

@@ -7,8 +7,8 @@ example usage:
        --valid_dir tfb323/ --o temp.dat --trim 0.05 --meta_dir /path/ndx/
 
 TO DO
-1. detemine error bars
-2. plot props w experimental data
+1. plot props w experimental data
+    plot scd chains together
 """
 
 import argparse
@@ -173,7 +173,7 @@ def main():
     meta = args.meta_dir
 
     # fix pbc artifacts
-    if fix:
+    if args.fix:
         gpbc = ['trjconv', '-s', pdir + ppref + '.tpr', '-f', pdir + ppref + '_c.trr', \
                '-pbc', 'nojump', '-o', pdir + ppref + '_c.trr']
         cl_gmx(gpbc, ['System'])

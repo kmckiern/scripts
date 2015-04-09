@@ -172,7 +172,7 @@ def main():
     # fix pbc artifacts
     if fix:
         gpbc = ['trjconv', '-s', pdir + ppref + '.tpr', '-f', pdir + ppref + '_c.trr', \
-               '-pbc', 'mol', '-o', pdir + ppref + '_c.trr']
+               '-pbc', 'nojump', '-o', pdir + ppref + '_c.trr']
         cl_gmx(gpbc, ['System'])
 
     props = ['Volume', 'Box-X', 'Box-Y']

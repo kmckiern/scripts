@@ -71,7 +71,7 @@ erngz, perngz = getEnergyDecomposition(simulation, fg)
 f = open(od + '/energies.dat', 'w')
 f.write('total energy: ' + str(pe) + '\n')
 f.write('component analysis: \n')
-f.write(json.dumps(perngz, indent=2))
+f.write(json.dumps(perngz, indent=2) + '\n')
 f.close()
 
 forces, pforce = getForceDecomposition(simulation, fg)

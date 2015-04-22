@@ -9,12 +9,19 @@ import numpy as np
 import json
 import argparse
 
+"""
+ex usage
+    >> python ~/scripts/ff/omm_energies_forces.py --pff whatever.xml --wff tip3p.xml --pdb FD/JIC/last.pdb --od omm
+"""
+
 parser = argparse.ArgumentParser(description='get energy and force components of a system for arbitrary FF')
 parser.add_argument('--pff', type=str, help='protein FF')
 parser.add_argument('--wff', type=str, help='water FF')
 parser.add_argument('--pdb', type=str, help='pdb')
+parser.add_argument('--od', type=str, help='output directory')
 args = parser.parse_args()
 
+# these are slightly modified version of some of Robert's code i saw on a github issue
 def forcegroupify(system):
     forcegroups = {}
     for i in range(system.getNumForces()):
@@ -57,22 +64,20 @@ state = simulation.context.getState(getEnergy=True, getForces=True)
 pe = state.getPotentialEnergy()
 forces = state.getForces()
 
-f = open('report.dat', 'w')
-f.write('openmm energy: ' + str(pe) + '\n')
-"""for i in forces:
-    f.write(str(i) + '\n')
-f.close()"""
+od = args.od
 
 fg = forcegroupify(system)
-forces, pforce = getForceDecomposition(simulation, fg)
 erngz, perngz = getEnergyDecomposition(simulation, fg)
+f = open(od + '/energies.dat', 'w')
+f.write('total energy: ' + str(pe) + '\n')
+f.write('component analysis: \n')
+f.write(json.dumps(perngz, indent=2))
+f.close()
+
+forces, pforce = getForceDecomposition(simulation, fg)
 for fg in pforce.keys():
     name = fg.split(';')[0].split('openmm.')[-1]
-    f = open(name + '.dat', 'w')
+    f = open(od + '/' + name + '.dat', 'w')
     for i in pforce[fg].split('),'):
-        f.write(i + '\n')
+        f.write(i.replace('[(', '').replace(' (', '') + '\n')
     f.close()
-print ('forces')
-# print (json.dumps(pforce, indent=2))
-print ('energies')
-print (json.dumps(perngz, indent=2))

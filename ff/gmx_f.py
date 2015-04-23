@@ -5,7 +5,7 @@ import argparse
 read in g_energy files for an original configuration, and a perturbation trajectory, 
     and calculates force components for each atom
 example usage
-    >> python ~/scripts/ff/gmx_f.py --up zero_ge.xvg --p tip3p.xml --h .001
+    >> python /home/kmckiern/scripts/ff/gmx_f.py --up unpert.xvg --p pert.xvg --dx .001 --od gmx
 """
 
 parser = argparse.ArgumentParser(description='get force components')
@@ -18,7 +18,7 @@ args = parser.parse_args()
 compare = ['Bond', 'Angle', 'Torsion', 'Nb']
 relevant = {'Bond': 0, 'Angle': 1, 'Proper Dih.': 2, 'Improper Dih.': 3, 'LJ-14': 4, 'Coulomb-14': 5, 'LJ (SR)': 6, 'Disper. corr.': 7, 'Coulomb (SR)': 8, 'Coul. recip.': 9, 'Position Rest.': 10}
 torsions = ['Proper Dih.', 'Improper Dih.']
-nonbond = ['LJ-14', 'Coulomb-14', 'LJ (SR)', 'Coulomb (SR)', 'Coul. recip.', 'Position Rest.']
+nonbond = ['LJ-14', 'Coulomb-14', 'LJ (SR)', 'Disper. corr.', 'Coulomb (SR)', 'Coul. recip.', 'Position Rest.']
 
 def FD(z, b, a, h):
     return -1.0*np.gradient(np.array([b, z, a]), h)[1]
@@ -29,7 +29,7 @@ h = args.dx
 od = args.od
 
 for fg in compare:
-    f = open(od + '/' + fg + '.dat', 'w')
+    # initialize
     data = np.zeros(len(pf[:, relevant[torsions[0]]]))
     ref = 0
     if fg == 'Torsion':
@@ -43,6 +43,7 @@ for fg in compare:
     else:
         data = pf[:, relevant[fg] + 1]
         ref = upf[relevant[fg] + 1]
+    f = open(od + '/' + fg + '.dat', 'w')
     for i in range(len(data) / 6):
         # x, y, and z
         for j in [0, 2, 4]:

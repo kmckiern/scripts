@@ -1,6 +1,8 @@
 import numpy as np
 import argparse
 from numpy import linalg as LA
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 
 """
@@ -22,7 +24,9 @@ g = np.genfromtxt(args.gmx, delimiter=",")
 dF =  LA.norm(o, axis=1)-LA.norm(g, axis=1)
 np.savetxt(args.name + '.dat', dF)
 
-hist, bin_edges = np.histogram(dF, bins = 50)
+hist, bin_edges = np.histogram(dF, bins = 100)
 plt.bar(bin_edges[:-1], hist, width = 1)
-plt.xlim(min(bin_edges), max(bin_edges))
+plt.ylim([0, 10])
+plt.title(args.name)
+plt.xlabel('|F|_o - |F|_g')
 plt.savefig(args.name + '.png')

@@ -1,45 +1,43 @@
-from __future__ import print_function
-from simtk.openmm import app
-import simtk.openmm as mm
-from simtk import unit
-from sys import stdout
-import os
-import time
 import numpy as np
-import json
 import argparse
 
 """
 read in g_energy files for an original configuration, and a perturbation trajectory, 
     and calculates force components for each atom
-ex usage
+example usage
     >> python ~/scripts/ff/gmx_f.py --up zero_ge.xvg --p tip3p.xml --h .001
 """
 
 parser = argparse.ArgumentParser(description='get force components')
 parser.add_argument('--up', type=str, help='unperturbed g_energy')
 parser.add_argument('--p', type=str, help='perturbed g_energy')
-parser.add_argument('--h', type=float, help='perturbation amount (angstroms)')
+parser.add_argument('--dx', type=float, help='perturbation amount (angstroms)')
+parser.add_argument('--od', type=str, help='output directory')
 args = parser.parse_args()
 
-def parse_zero(ef):
-    return None
+compare = ['Bond', 'Angle']#, 'Torsion', 'Nb']
+relevant = {'Bond': 0, 'Angle': 1, 'Proper Dih.': 2, 'Improper Dih.': 3, 'LJ-14': 4, 'Coulomb-14': 5, 'LJ (SR)': 6, 'Disper. corr.': 7, 'Coulomb (SR)': 8, 'Coul. recip.': 9, 'Position Rest.': 10}
+torsions = ['Proper Dih.', 'Improper Dih.']
+nonbond = ['LJ-14', 'Coulomb-14', 'LJ (SR)', 'Coulomb (SR)', 'Coul. recip.', 'Position Rest.']
 
-def parse_pertbd(ef):
-    return None
+def FD(z, b, a, h):
+    return -1.0*np.gradient(np.array([b, z, a]), h)[1]
 
-fg = forcegroupify(system)
-erngz, perngz = getEnergyDecomposition(simulation, fg)
-f = open(od + '/energies.dat', 'w')
-f.write('total energy: ' + str(pe) + '\n')
-f.write('component analysis: \n')
-f.write(json.dumps(perngz, indent=2) + '\n')
-f.close()
+upf = np.genfromtxt(args.up, skip_header=32)
+pf = np.genfromtxt(args.p, skip_header=32)
+h = args.dx
+od = args.od
 
-forces, pforce = getForceDecomposition(simulation, fg)
-for fg in pforce.keys():
-    name = fg.split(';')[0].split('openmm.')[-1]
-    f = open(od + '/' + name + '.dat', 'w')
-    for i in pforce[fg].split('),'):
-        f.write(i.replace('[(', '').replace(')]', '').replace(' (', '') + '\n')
+for fg in compare:
+    f = open(od + '/' + fg + '.dat', 'w')
+    data = pf[:, relevant[fg] + 1]
+    until = len(data)
+    for i in range(until / 6):
+        # x, y, and z
+        for j in [0, 2, 4]:
+            if j < 4:
+                f.write(str(FD(upf[relevant[fg] + 1], data[j+(i*6)], data[(j+1)+(i*6)], h)) + ', ')
+            else:
+                f.write(str(FD(upf[relevant[fg] + 1], data[j+(i*6)], data[(j+1)+(i*6)], h)))
+        f.write('\n')
     f.close()

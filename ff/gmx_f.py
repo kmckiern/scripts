@@ -15,7 +15,7 @@ parser.add_argument('--dx', type=float, help='perturbation amount (angstroms)')
 parser.add_argument('--od', type=str, help='output directory')
 args = parser.parse_args()
 
-compare = ['Bond', 'Angle']#, 'Torsion', 'Nb']
+compare = ['Bond', 'Angle', 'Torsion']#, 'Nb']
 relevant = {'Bond': 0, 'Angle': 1, 'Proper Dih.': 2, 'Improper Dih.': 3, 'LJ-14': 4, 'Coulomb-14': 5, 'LJ (SR)': 6, 'Disper. corr.': 7, 'Coulomb (SR)': 8, 'Coul. recip.': 9, 'Position Rest.': 10}
 torsions = ['Proper Dih.', 'Improper Dih.']
 nonbond = ['LJ-14', 'Coulomb-14', 'LJ (SR)', 'Coulomb (SR)', 'Coul. recip.', 'Position Rest.']
@@ -30,7 +30,12 @@ od = args.od
 
 for fg in compare:
     f = open(od + '/' + fg + '.dat', 'w')
-    data = pf[:, relevant[fg] + 1]
+    if fg == 'Torsions':
+        data = None
+        for t in torsions:
+            data += pf[:, relevant[t] + 1]
+    else:
+        data = pf[:, relevant[fg] + 1]
     until = len(data)
     for i in range(until / 6):
         # x, y, and z

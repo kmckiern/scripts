@@ -21,7 +21,7 @@ args = parser.parse_args()
 
 tK = args.t
 pdb = app.PDBFile(args.pdb)
-forcefield = app.ForceField(args.pff, args.wff)
+forcefield = app.ForceField(args.pff + '.xml', args.wff + '.xml')
 
 system = forcefield.createSystem(pdb.topology, nonbondedMethod=app.CutoffPeriodic,
     nonbondedCutoff=1.2*unit.nanometers, constraints=app.HBonds, rigidWater=True)

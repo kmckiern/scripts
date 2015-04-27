@@ -23,9 +23,9 @@ tK = args.t
 pdb = app.PDBFile(args.pdb)
 forcefield = app.ForceField(args.pff + '.xml', args.wff + '.xml')
 
-system = forcefield.createSystem(pdb.topology, nonbondedMethod=app.CutoffPeriodic,
-    nonbondedCutoff=1.2*unit.nanometers, constraints=app.HBonds, rigidWater=True)
-integrator = mm.LangevinIntegrator(tK*unit.kelvin, 1.0/unit.picoseconds,
+system = forcefield.createSystem(pdb.topology, nonbondedMethod=app.CutoffPeriodic, 
+    nonbondedCutoff=0.6*unit.nanometers, constraints=app.HBonds, rigidWater=True)
+integrator = mm.LangevinIntegrator(300*unit.kelvin, 1.0/unit.picoseconds, 
     2.0*unit.femtoseconds)
 integrator.setConstraintTolerance(0.00001)
 system.addForce(mm.MonteCarloBarostat(1*unit.atmospheres, tK*unit.kelvin, 25))
@@ -44,8 +44,8 @@ print('Equilibrating...')
 simulation.step(100000)
 
 simulation.reporters.append(app.DCDReporter(args.od + args.pff + '_' + 
-    args.wff + '.dcd', 10000))
-simulation.reporters.append(app.StateDataReporter(stdout, 10000, step=True,
+    args.wff + '.dcd', 25000))
+simulation.reporters.append(app.StateDataReporter(stdout, 25000, step=True,
     potentialEnergy=True, temperature=True, progress=True, remainingTime=True,
     speed=True, totalSteps=12500000, separator='\t'))
 

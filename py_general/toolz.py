@@ -1,5 +1,5 @@
 import re
-import subprocess as subp
+from subprocess import Popen, PIPE, STDOUT
 
 def natural_sort(l):
     """ From stack overflow: Natural sorting of a list (so 11 comes after 7) """
@@ -7,6 +7,7 @@ def natural_sort(l):
     alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
     return sorted(l, key = alphanum_key)
 
-def call_cml(cmd):
-    cmd_ls = cmd.split()
-    return subp.Popen(cmd_ls, stdout=subp.PIPE).communicate()[0]
+# ex: call_cl(['grep', '-R', 'idk', '.'])
+def call_cl(command_lst, pipe_args=[]):
+    p = Popen(command_lst, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
+    p.communicate(input='\n'.join(pipe_args))

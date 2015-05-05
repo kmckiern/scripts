@@ -10,4 +10,5 @@ def natural_sort(l):
 # ex: call_cl(['grep', '-R', 'idk', '.'])
 def call_cl(command_lst, pipe_args=[]):
     p = Popen(command_lst, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-    p.communicate(input='\n'.join(pipe_args))
+    out, err = p.communicate(input='\n'.join(pipe_args))
+    return out

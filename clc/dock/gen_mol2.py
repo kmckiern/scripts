@@ -2,6 +2,9 @@
 
 """
 Use chimera to convert a pdb to a mol2
+example usage:
+    >> chimera --nogui --script "/home/kmckiern/scripts/clc/dock/gen_mol2.py \
+           lig_17.pdb --noH"
 """
 
 import os

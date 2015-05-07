@@ -20,8 +20,7 @@ parser = argparse.ArgumentParser(description='automate clc docking')
 parser.add_argument('--rec', type=str, help='receptor file')
 parser.add_argument('--lig', type=str, help='ligand pdb')
 parser.add_argument('--dist', type=float, help='dist from lig for spheres')
-parser.add_argument('--sr', type=str, help='script root', \
-    '/home/kmckiern/scripts/')
+parser.add_argument('--sr', type=str, help='script root', default='/home/kmckiern/scripts/')
 parser.add_argument('--trim_rec', action='store_true', help='trim pdb?')
 args = parser.parse_args()
 
@@ -32,17 +31,28 @@ from toolz import call_cl
 d6bin = '/home/kmckiern/src/dock6/bin/'
 
 def main():
-    sph = args.sph
+    rec = args.rec
     lig = args.lig
     d = args.dist
-    pref = sph.split('.')[0]
+    pref = rec.split('.')[0]
 
     # if pdb is gt 15000 atoms, prob need to trim.
     if args.trim_rec:
-       rt = ['python', sr + 'clc/trim_pdb.py', '--rec', rec, '--lig', lig, \
-           '--d', dist*3.0] 
+        rt = ['python', sr + 'clc/dock/trim_pdb.py', '--rec', rec, '--lig', lig, '--d', str(d*3.0)]
+        call_cl(rt)
+        rec = pref + '_trim.pdb'
+
+    # generate ligand and receptor (h and no h) mol2 files
+    lmol2 = ['chimera', '--nogui', '--script', '/home/kmckiern/scripts/clc/dock/gen_mol2.py ' + lig]
+    call_cl(lmol2)
+    rmol2 = ['chimera', '--nogui', '--script', '/home/kmckiern/scripts/clc/dock/gen_mol2.py ' + rec]
+    call_cl(rmol2)
+    rnoHmol2 = ['chimera', '--nogui', '--script', '/home/kmckiern/scripts/clc/dock/gen_mol2.py ' + rec + ' --noH']
+    call_cl(rnoHmol2)
+
+    # write receptor surface file
     
-    # run showsphere to get sphere pdb
+    """# run showsphere to get sphere pdb
     # assumes i'm on not0rious (only place i have dock installed)
     show = [d6bin + 'showsphere']
     show_in = [sph, '-1', 'N', pref + '_show', 'N']
@@ -53,7 +63,7 @@ def main():
     # read in lig pdb
     l = mdtraj.load(lig)
     # get list of spheres within distance d of lig   
-    close = get_close(sphurz, l, d)
+    close = get_close(sphurz, l, d)"""
 
 if __name__ == '__main__':
     main()

@@ -9,10 +9,11 @@ example usage:
 
 import argparse
 import mdtraj
-sys.path.insert(0, '~/scripts/py_general/')
+import sys
+sys.path.insert(0, '/home/kmckiern/scripts/py_general/')
 from toolz import call_cl
 
-parser = argparse.ArgumentParser(description='trim a pdb file based on cutoff 
+parser = argparse.ArgumentParser(description='trim a pdb file based on cutoff \
     from some ligand')
 parser.add_argument('--rec', type=str, help='pdb to trim, usually a receptor')
 parser.add_argument('--lig', type=str, help='ligand pdb')
@@ -27,14 +28,15 @@ def main():
 
     # can't figure out a non-hacky way to combine pdbs.
     temp = 'temp.pdb'
-    cp_temp = ['cp', rec, temp]
-    call_cl(cp_temp)
-    rm_end = ['sed', '\'$d\'', temp]
-    call_cl(rm_end)
-    append_lig = ['cat', lig, '>>', temp]
-    call_cl(append_lig)
-    new_end = ['echo', 'END', '>>', temp]
-    
+    cp_receptor = ['head', '-n', '-1', rec]
+    receptor = call_cl(cp_receptor)
+    cp_ligand = ['tail', '-n', '-1', lig]
+    ligand = call_cl(cp_lig)
+    tf = open(temp, 'w')
+    tf.write(receptor)
+    tf.write('\n')
+    tf.write(ligand)
+    tf.close()
 
 if __name__ == '__main__':
     main()

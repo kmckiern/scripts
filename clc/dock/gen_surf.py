@@ -10,6 +10,7 @@ example usage:
 import os
 from chimera import runCommand as rc
 from chimera import openModels, MSMSModel
+from WriteDMS import writeDMS
 import sys
 
 fn = sys.argv[1]

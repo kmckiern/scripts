@@ -9,6 +9,7 @@ example usage:
 
 import argparse
 import mdtraj
+import numpy as np
 import sys
 sys.path.insert(0, '/home/kmckiern/scripts/py_general/')
 from toolz import call_cl
@@ -45,7 +46,7 @@ def main():
     # get ligand indices
     ca = comb.n_atoms
     la = l.n_atoms
-    li = np.arange(ca-la, la)
+    li = np.arange(ca-la, ca)
     # find neighbors
     neighbors = mdtraj.compute_neighbors(comb, d, li)[0]
     # remove ligand from neighbor list (symmetric diff)

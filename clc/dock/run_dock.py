@@ -30,6 +30,10 @@ from toolz import call_cl
 
 d6bin = '/home/kmckiern/src/dock6/bin/'
 
+def call_chimera(args):
+    command = ['chimera', '--nogui', '--script', args]
+    call_cl(command)
+
 def main():
     rec = args.rec
     lig = args.lig
@@ -43,14 +47,15 @@ def main():
         rec = pref + '_trim.pdb'
 
     # generate ligand and receptor (h and no h) mol2 files
-    lmol2 = ['chimera', '--nogui', '--script', '/home/kmckiern/scripts/clc/dock/gen_mol2.py ' + lig]
-    call_cl(lmol2)
-    rmol2 = ['chimera', '--nogui', '--script', '/home/kmckiern/scripts/clc/dock/gen_mol2.py ' + rec]
-    call_cl(rmol2)
-    rnoHmol2 = ['chimera', '--nogui', '--script', '/home/kmckiern/scripts/clc/dock/gen_mol2.py ' + rec + ' --noH']
-    call_cl(rnoHmol2)
+    gm2 = sr + 'clc/dock/gen_mol2.py '
+    call_chimera(gm2 + lig)
+    call_chimera(gm2 + rec)
+    call_chimera(gm2 + rec + ' --noH')
 
     # write receptor surface file
+    rnoH = rec.split('.')[0] + '_noH.mol2'
+    gsurf = sr + 'clc/dock/gen_surf.py '
+    call_chimera(gsurf + rnoH)
     
     """# run showsphere to get sphere pdb
     # assumes i'm on not0rious (only place i have dock installed)

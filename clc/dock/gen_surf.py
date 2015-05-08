@@ -19,6 +19,6 @@ pref = fn.split('.')[0]
 rc('open ' + fn)
 rc("surf")
 surf = openModels.list(modelTypes=[MSMSModel])[0]
-writeDMS(surf, "output.dms")
+writeDMS(surf, pref + '.dms')
 rc('close all')
 rc('stop now')

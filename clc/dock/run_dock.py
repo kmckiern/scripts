@@ -71,7 +71,7 @@ def main():
 
     # if pdb is gt 15000 atoms, prob need to trim.
     if args.trim_rec:
-        trim_rl(rec, lig, d*3.0)
+        trim_rl(rec, lig, d*2.0)
         rec = pref + '_trim.pdb'
         pref = rec.split('.')[0]
 
@@ -102,7 +102,7 @@ def main():
     gs = [d6bin + 'sphgen', '-i', 'INSPH', '-o', 'OUTSPH']
     call_cl(gs)
     # trim sphere file
-    ss = [d6bin + 'sphere_selector', pref + '_big.sph', ligpref + '.mol2', str(d*10.0)]
+    ss = [d6bin + 'sphere_selector', pref + '_big.sph', ligpref + '.mol2', str(d*6.0)]
     call_cl(ss)
     # gen box and grid
     gb = [d6bin + 'showbox']
@@ -110,11 +110,11 @@ def main():
     call_cl(gb, gbin)
     ggrid = [d6bin + 'grid', '-i', 'grid.in']
     grid_out, grid_err = call_cl(ggrid)
-    write_out('grid', grid_out, grid_err):
+    write_out('grid', grid_out, grid_err)
     # dock some ligands!!
     dock = [d6bin + 'dock6', '-i', 'dock.in']
     dock_out, dock_err = call_cl(dock)
-    write_out('dock', dock_out, dock_err):
+    write_out('dock', dock_out, dock_err)
 
 if __name__ == '__main__':
     main()

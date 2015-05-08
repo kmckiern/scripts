@@ -54,6 +54,12 @@ def gen_templ8(tf, fill, dest):
                 line = ''.join(temp)
             of.write(line)
 
+def write_out(name, o, e):
+    oe = open(name + '_oe.dat', 'w+')
+    oe.write(o)
+    oe.write(e)
+    oe.close()
+
 def main():
     cwd = os.getcwd()
     rec = args.rec
@@ -103,10 +109,12 @@ def main():
     gbin = open('showbox.in').read().splitlines() 
     call_cl(gb, gbin)
     ggrid = [d6bin + 'grid', '-i', 'grid.in']
-    call_cl(ggrid)
+    grid_out, grid_err = call_cl(ggrid)
+    write_out('grid', grid_out, grid_err):
     # dock some ligands!!
     dock = [d6bin + 'dock6', '-i', 'dock.in']
-    call_cl(dock)
+    dock_out, dock_err = call_cl(dock)
+    write_out('dock', dock_out, dock_err):
 
 if __name__ == '__main__':
     main()

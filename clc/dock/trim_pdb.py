@@ -33,9 +33,9 @@ def main():
 
     # can't figure out a non-hacky way to combine pdbs.
     cp_receptor = ['head', '-n', '-1', rec]
-    receptor = call_cl(cp_receptor)
+    receptor, r_err = call_cl(cp_receptor)
     cp_ligand = ['tail', '-n', '+2', lig]
-    ligand = call_cl(cp_ligand)
+    ligand, l_err = call_cl(cp_ligand)
     tf = open(temp, 'w')
     tf.write(receptor)
     tf.write(ligand)

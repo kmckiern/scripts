@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser(description='trim a pdb file based on cutoff \
 parser.add_argument('--rec', type=str, help='pdb to trim, usually a receptor')
 parser.add_argument('--lig', type=str, help='ligand pdb')
 parser.add_argument('--temp', type=str, help='temp combined pdb', default='temp.pdb')
-parser.add_argument('--dist', type=float, help='dist from lig (/angstrom)')
+parser.add_argument('--dist', type=float, help='dist from lig (/nm)')
 args = parser.parse_args()
 
 def main():

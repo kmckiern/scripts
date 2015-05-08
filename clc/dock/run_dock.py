@@ -29,10 +29,29 @@ sys.path.insert(0, sr + 'py_general/')
 from toolz import call_cl
 
 d6bin = '/home/kmckiern/src/dock6/bin/'
+cwd = os.getcwd()
 
 def call_chimera(args):
     command = ['chimera', '--nogui', '--script', args]
     call_cl(command)
+
+def gen_templ8(tf, fill, dest=cwd):
+    keys = fill.keys()
+    fld = dest + '/' + tf.split('/')[-1]
+    with open(tf, "r") as template:
+        lines = template.readlines()
+    with open(fld, 'w+') as of:
+        for line in lines:
+            l = line.split('$')
+            if len(l) > 1:
+                temp = []
+                for i in l:
+                    if i in keys:
+                        temp.append(fill[i])
+                    else:
+                        temp.append(i)
+                line = ''.join(temp)
+            of.write(line)
 
 def main():
     rec = args.rec
@@ -45,17 +64,28 @@ def main():
         rt = ['python', sr + 'clc/dock/trim_pdb.py', '--rec', rec, '--lig', lig, '--d', str(d*3.0)]
         call_cl(rt)
         rec = pref + '_trim.pdb'
+        pref = rec.split('.')[0]
 
     # generate ligand and receptor (h and no h) mol2 files
     gm2 = sr + 'clc/dock/gen_mol2.py '
-    call_chimera(gm2 + lig)
-    call_chimera(gm2 + rec)
-    call_chimera(gm2 + rec + ' --noH')
+    # call_chimera(gm2 + lig)
+    # call_chimera(gm2 + rec)
+    # call_chimera(gm2 + rec + ' --noH')
 
     # write receptor surface file
-    rnoH = rec.split('.')[0] + '_noH.mol2'
+    rnoH = pref + '_noH.mol2'
+    pnoH = rnoH.split('.')[0]
     gsurf = sr + 'clc/dock/gen_surf.py '
-    call_chimera(gsurf + rnoH)
+    # call_chimera(gsurf + rnoH)
+
+    # fill in all of the dock templates
+    tmap = {'SURFACE': pnoH + '.dms', 'SPHERE': pref, 'RECEPTOR': pref}
+    template_dir = sr + 'clc/dock/templates/'
+    tfs = [template_dir + t for t in os.listdir(template_dir)]
+    for tf in tfs:
+        gen_templ8(tf, tmap, cwd)
+
+    # gen spheres
     
     """# run showsphere to get sphere pdb
     # assumes i'm on not0rious (only place i have dock installed)

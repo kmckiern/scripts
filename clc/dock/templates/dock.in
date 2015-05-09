@@ -1,4 +1,4 @@
-ligand_atom_file                                             $RECEPTOR$.mol2
+ligand_atom_file                                             $LIGAND$.mol2
 limit_max_ligands                                            no
 skip_molecule                                                no
 read_mol_solvation                                           no

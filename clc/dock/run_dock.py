@@ -30,7 +30,7 @@ from toolz import call_cl
 
 def trim_rl(r, l, dist):
     rt = ['python', sr + 'clc/dock/trim_pdb.py', '--rec', r, '--lig', l, '--d', str(dist)]
-    call_cl(rt)
+    out, err = call_cl(rt)
 
 def call_chimera(args):
     command = ['chimera', '--nogui', '--script', args]
@@ -56,8 +56,8 @@ def gen_templ8(tf, fill, dest):
 
 def write_out(name, o, e):
     oe = open(name + '_oe.dat', 'w+')
-    oe.write(o)
-    oe.write(e)
+    oe.write(str(o))
+    oe.write(str(e))
     oe.close()
 
 def main():
@@ -71,7 +71,7 @@ def main():
 
     # if pdb is gt 15000 atoms, prob need to trim.
     if args.trim_rec:
-        trim_rl(rec, lig, d*2.0)
+        trim_rl(rec, lig, d*3.0)
         rec = pref + '_trim.pdb'
         pref = rec.split('.')[0]
 
@@ -88,7 +88,7 @@ def main():
     call_chimera(gsurf + rnoH)
 
     # fill in all of the dock templates
-    tmap = {'SURFACE': pnoH, 'SPHERE': pref, 'RECEPTOR': pref}
+    tmap = {'SURFACE': pnoH, 'SPHERE': pref, 'RECEPTOR': pref, 'LIGAND': ligpref}
     template_dir = sr + 'clc/dock/templates/'
     tfs = [template_dir + t for t in os.listdir(template_dir)]
     for tf in tfs:
@@ -102,7 +102,7 @@ def main():
     gs = [d6bin + 'sphgen', '-i', 'INSPH', '-o', 'OUTSPH']
     call_cl(gs)
     # trim sphere file
-    ss = [d6bin + 'sphere_selector', pref + '_big.sph', ligpref + '.mol2', str(d*6.0)]
+    ss = [d6bin + 'sphere_selector', pref + '_big.sph', ligpref + '.mol2', str(d*10.0)]
     call_cl(ss)
     # gen box and grid
     gb = [d6bin + 'showbox']

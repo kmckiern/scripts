@@ -12,7 +12,7 @@ def natural_sort(l):
 def call_cl(command_lst, pipe_args=[]):
     p = Popen(command_lst, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
     out, err = p.communicate(input='\n'.join(pipe_args))
-    return out
+    return out, err
 
 """
 adapated from:

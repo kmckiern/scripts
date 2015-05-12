@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser(description='trim a pdb file based on cutoff \
 parser.add_argument('--rec', type=str, help='pdb to trim, usually a receptor')
 parser.add_argument('--lig', type=str, help='ligand pdb')
 parser.add_argument('--temp', type=str, help='temp combined pdb', default='temp.pdb')
-parser.add_argument('--dist', type=float, help='dist from lig (/angstrom)')
+parser.add_argument('--dist', type=float, help='dist from lig (/nm)')
 args = parser.parse_args()
 
 def main():
@@ -33,9 +33,9 @@ def main():
 
     # can't figure out a non-hacky way to combine pdbs.
     cp_receptor = ['head', '-n', '-1', rec]
-    receptor = call_cl(cp_receptor)
+    receptor, r_err = call_cl(cp_receptor)
     cp_ligand = ['tail', '-n', '+2', lig]
-    ligand = call_cl(cp_ligand)
+    ligand, l_err = call_cl(cp_ligand)
     tf = open(temp, 'w')
     tf.write(receptor)
     tf.write(ligand)

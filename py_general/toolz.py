@@ -26,3 +26,4 @@ def xtract(fn, dest=None):
     else:
         pth = '/'.join(fn.split('/')[:1])
         zfile.extractall(pth)
+    return out, err

@@ -9,8 +9,8 @@ def natural_sort(l):
     return sorted(l, key = alphanum_key)
 
 # ex: call_cl(['grep', '-R', 'idk', '.'])
-def call_cl(command_lst, pipe_args=[]):
-    p = Popen(command_lst, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
+def call_cl(command_lst, std=PIPE, pipe_args=[]):
+    p = Popen(command_lst, stdin=PIPE, stdout=std, stderr=std, shell=True)
     out, err = p.communicate(input='\n'.join(pipe_args))
     return out, err
 

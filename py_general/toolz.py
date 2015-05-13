@@ -24,6 +24,5 @@ def xtract(fn, dest=None):
     if dest != None:
         zfile.extractall(dest)
     else:
-        pth = '/'.join(fn.split('/')[:1])
+        pth = '/'.join(fn.split('/')[:-1])
         zfile.extractall(pth)
-    return out, err

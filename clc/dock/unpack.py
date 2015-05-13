@@ -25,7 +25,7 @@ def main():
     pth = '/'.join(fn.split('/')[:-1])
 
     # extract zip file
-    # xtract(fn)
+    xtract(fn)
 
     # easier to move into working dir
     os.chdir(pth)
@@ -39,7 +39,7 @@ def main():
     rf = 'receptor.pdb'
     ligf = 'lig.pdb'
 
-    """og_pdbs = [f for f in os.listdir('.') if '.pdb' in f]
+    og_pdbs = [f for f in os.listdir('.') if '.pdb' in f]
     # pull clc config from lig 0
     call_write('grep -v LIG ' + og_pdbs[0], rf)
     # rewrite to dock dir in consistent format
@@ -48,7 +48,7 @@ def main():
 
     # parse ligs out of dock pdbs
     for p, pdb in enumerate(og_pdbs):
-        call_write('grep LIG ' + pdb, 'lig_' + str(p) + '.pdb')"""
+        call_write('grep LIG ' + pdb, 'lig_' + str(p) + '.pdb')
     # get updated list of lig pdbs
     lig_pdbs = [f for f in os.listdir('.') if 'lig_' in f]
     lig_pdbs.sort()

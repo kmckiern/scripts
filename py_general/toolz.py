@@ -26,3 +26,9 @@ def xtract(fn, dest=None):
     else:
         pth = '/'.join(fn.split('/')[:-1])
         zfile.extractall(pth)
+
+def write_out(name, o, e):
+    oe = open(name + '_oe.dat', 'w+')
+    oe.write(str(o))
+    oe.write(str(e))
+    oe.close()

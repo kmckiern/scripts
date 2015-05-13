@@ -30,11 +30,11 @@ from toolz import call_cl
 from toolz import write_out
 
 def trim_rl(r, l, dist):
-    rt = ['python', sr + 'clc/dock/trim_pdb.py', '--rec', r, '--lig', l, '--d', str(dist)]
+    rt = 'python ' + sr + 'clc/dock/trim_pdb.py --rec ' + r + ' --lig ' + l + ' --d ' + str(dist)
     out, err = call_cl(rt)
 
 def call_chimera(args):
-    command = ['chimera', '--nogui', '--script', args]
+    command = 'chimera --nogui --script \'' + args + '\''
     call_cl(command)
 
 def gen_templ8(tf, fill, dest):
@@ -94,20 +94,19 @@ def main():
         os.remove(cwd + '/OUTSPH')
     except OSError:
         pass
-    gs = [d6bin + 'sphgen', '-i', 'INSPH', '-o', 'OUTSPH']
+    gs = d6bin + 'sphgen -i INSPH -o OUTSPH'
     call_cl(gs)
     # trim sphere file
-    ss = [d6bin + 'sphere_selector', pref + '_big.sph', ligpref + '.mol2', str(d*10.0)]
+    ss = d6bin + 'sphere_selector ' + pref + '_big.sph ' + ligpref + '.mol2 ' + str(d*10.0)
     call_cl(ss)
     # gen box and grid
-    gb = [d6bin + 'showbox']
-    gbin = open('showbox.in').read().splitlines() 
-    call_cl(gb, gbin)
-    ggrid = [d6bin + 'grid', '-i', 'grid.in']
+    gb = d6bin + 'showbox < showbox.in'
+    call_cl(gb)
+    ggrid = d6bin + 'grid -i grid.in'
     grid_out, grid_err = call_cl(ggrid)
     write_out('grid_oe.dat', grid_out, grid_err)
     # dock some ligands!!
-    dock = [d6bin + 'dock6', '-i', 'dock.in']
+    dock = d6bin + 'dock6 -i dock.in'
     dock_out, dock_err = call_cl(dock)
     write_out('dock_oe.dat', dock_out, dock_err)
 

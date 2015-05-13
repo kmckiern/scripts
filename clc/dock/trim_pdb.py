@@ -32,9 +32,9 @@ def main():
     pref = rec.split('.')[0]
 
     # can't figure out a non-hacky way to combine pdbs.
-    cp_receptor = ['head', '-n', '-1', rec]
+    cp_receptor = 'head -n -2 ' + rec
     receptor, r_err = call_cl(cp_receptor)
-    cp_ligand = ['tail', '-n', '+2', lig]
+    cp_ligand = 'tail -n +2 ' + lig
     ligand, l_err = call_cl(cp_ligand)
     tf = open(temp, 'w')
     tf.write(receptor)

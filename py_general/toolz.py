@@ -8,11 +8,21 @@ def natural_sort(l):
     alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
     return sorted(l, key = alphanum_key)
 
-# ex: call_cl(['grep', '-R', 'idk', '.'])
 def call_cl(command_lst, std=PIPE, pipe_args=[]):
     p = Popen(command_lst, stdin=PIPE, stdout=std, stderr=std, shell=True)
     out, err = p.communicate(input='\n'.join(pipe_args))
     return out, err
+
+def write_out(name, o, e=None):
+    oe = open(name, 'w+')
+    oe.write(str(o))
+    if e != None:
+        oe.write(str(e))
+    oe.close()
+
+def call_write(command_lst, std=PIPE, pipe_args=[], name):
+    o, e = call_cl(command_lst, std, pipe_args)
+    write_out(name, o)
 
 """
 adapated from:
@@ -26,9 +36,3 @@ def xtract(fn, dest=None):
     else:
         pth = '/'.join(fn.split('/')[:-1])
         zfile.extractall(pth)
-
-def write_out(name, o, e):
-    oe = open(name + '_oe.dat', 'w+')
-    oe.write(str(o))
-    oe.write(str(e))
-    oe.close()

@@ -27,6 +27,7 @@ args = parser.parse_args()
 sr = args.sr
 sys.path.insert(0, sr + 'py_general/')
 from toolz import call_cl
+from toolz import write_out
 
 def trim_rl(r, l, dist):
     rt = ['python', sr + 'clc/dock/trim_pdb.py', '--rec', r, '--lig', l, '--d', str(dist)]
@@ -53,12 +54,6 @@ def gen_templ8(tf, fill, dest):
                         temp.append(i)
                 line = ''.join(temp)
             of.write(line)
-
-def write_out(name, o, e):
-    oe = open(name + '_oe.dat', 'w+')
-    oe.write(str(o))
-    oe.write(str(e))
-    oe.close()
 
 def main():
     cwd = os.getcwd()
@@ -110,11 +105,11 @@ def main():
     call_cl(gb, gbin)
     ggrid = [d6bin + 'grid', '-i', 'grid.in']
     grid_out, grid_err = call_cl(ggrid)
-    write_out('grid', grid_out, grid_err)
+    write_out('grid_oe.dat', grid_out, grid_err)
     # dock some ligands!!
     dock = [d6bin + 'dock6', '-i', 'dock.in']
     dock_out, dock_err = call_cl(dock)
-    write_out('dock', dock_out, dock_err)
+    write_out('dock_oe.dat', dock_out, dock_err)
 
 if __name__ == '__main__':
     main()

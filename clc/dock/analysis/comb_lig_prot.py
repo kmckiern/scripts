@@ -23,7 +23,7 @@ def main():
     p = args.pro
     l = args.lig
 
-    if clean_lig:
+    if args.clean_lig:
         import mdtraj
         mdtraj.load(l).save_pdb(l)
 

@@ -6,7 +6,6 @@ use chimera to combine lig and receptor into one pdb
 
 import os
 from chimera import runCommand as rc
-from chimera import openModels, MSMSModel
 import sys
 
 p = sys.argv[1]

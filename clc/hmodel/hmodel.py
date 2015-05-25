@@ -11,15 +11,18 @@ import os
 import sys
 from chimera import runCommand as rc
 
-target = sys.argv[0]
-templ8 = sys.argv[1]
-out = sys.argv[2]
+# read in args
+target = sys.argv[1]
+templ8 = sys.argv[2]
 
 # open target sequence
 rc('open ' + target)
+
 # open template
 rc('open ' + templ8)
+rc('sequence #0')
 
+rc('open /Users/kerimckiernan/Dropbox/scripts/clc/hmodel/tryAlign.py')
 
-rc('close all')
-rc('stop now')
+#rc('close all')
+#rc('stop now')

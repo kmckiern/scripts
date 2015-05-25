@@ -20,19 +20,23 @@ sys.path.insert(0, sr + 'py_general/')
 from toolz import call_cl
 
 def call_chimera(args):
-    command = 'chimera --nogui --script \'' + args + '\''
+    # MAV requires gui
+    command = 'chimera --script \'' + args + '\''
+    print command
     call_cl(command)
 
 def main():
     seq = args.seq
     pref = seq.split('/')[-1]
+    templ8s = args.templates
     out = args.od + pref 
 
-    templates = [f for f in os.listdir('.') if '.pdb' in f]
+    templates = [f for f in os.listdir(templ8s) if '.pdb' in f]
+    print '?', templates
 
     for t in templates:
         model = sr + 'clc/hmodel/hmodel.py ' + seq + ' ' + t + ' ' + out
-        call_chimera(model)
+        print call_chimera(model)
 
 if __name__ == '__main__':
     main()

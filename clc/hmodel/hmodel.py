@@ -7,21 +7,24 @@ example usage:
 """
 import sys
 from chimera import runCommand as rc
+import time
 
 # read in args
 _, target, template, od = sys.argv
 
 # open target sequence
 rc('open ' + target)
-# open template
-rc('open ' + templ8)
+# open template structure, and generate sequence
+rc('open ' + template)
 rc('sequence #0')
 
 # run alignment and modelling script
-rc('open /Users/kerimckiernan/Dropbox/scripts/clc/hmodel/align.py')
+rc('open /Users/kerimckiernan/Dropbox/scripts/clc/hmodel/align_model.py')
+
+# hacky.  above needs to finish but before saving pdbs
+#time.sleep(1800)
 
 # save models
-rc('sel 1-5')
-rc('write selected ' + od + '$number_' + template)
-rc('close all')
-rc('stop now')
+#rc('write 1 ' + od + '$number_' + template)
+#rc('close all')
+#rc('stop now')

@@ -22,7 +22,7 @@ rc('open ' + target)
 rc('open ' + templ8)
 rc('sequence #0')
 
-rc('open /Users/kerimckiernan/Dropbox/scripts/clc/hmodel/tryAlign.py')
+rc('open /Users/kerimckiernan/Dropbox/scripts/clc/hmodel/align.py')
 
 #rc('close all')
 #rc('stop now')

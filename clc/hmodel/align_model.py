@@ -1,6 +1,7 @@
 import sys
 from copy import copy
 import time
+import threading
 
 import Pmw, Tkinter
 from chimera import runCommand as rc
@@ -23,7 +24,7 @@ def findMAVs():
         raise AssertionError("No MAV instances!")
     return mavs
 
-def model(trgt, templ8, od):
+def model(trgt, tmpl8, seq_name):
     # open target sequence
     rc('open ' + trgt)
     # open template structure, and generate sequence
@@ -33,8 +34,8 @@ def model(trgt, templ8, od):
     # MAV objects
     fmav = findMAVs()
     target, template = fmav
-    seq = copy(template.seqs[0])
-    seq_name = trgt.split('/')[-1]
+    tar_seq = copy(target.seqs[0])
+    temp_seq = copy(template.seqs[0])
     
     # align sequences
     # get template secondary structure matrix
@@ -43,29 +44,35 @@ def model(trgt, templ8, od):
     ssParams = SSParams(structPage, template.prefs)
     kw = {'ssMatrix': ssParams.getMatrix()}
     # generalize these vars later.  tired of hacking rn.
-    target.alignSeq(seq, displayName=seq_name, 
+    # match target fasta sequence to template pdb sequence
+    target.alignSeq(temp_seq, displayName=seq_name, 
         matrix=template.prefs[MATRIX], gapOpenStrand=-18.0, 
         scoreGap=-1, scoreGapOpen=-12, gapOpenHelix=-18.0, 
         gapOpenOther=-6.0, gapChar='.', guideSeqs=None,
         ssFraction=0.3, **kw)
     
     # run modeller on alignment
-    ModellerBase.model(template, seq, openModels.list(modelTypes=[Molecule]), '5', 1, 1, 0, **kw)
+    ModellerBase.model(target, tar_seq, openModels.list(modelTypes=[Molecule]), 
+        '5', 1, 1, 0, veryFast=0, **kw)
 
-    """
+# hack due to the fact that python does not wait for modeller to finish
+# before trying to write output files
+def wait_and_write(seq_name, od):
     while len(openModels.list(modelTypes=[Molecule])) < 2:
         time.sleep(120)
-    
-    rc('write 1 ' + od + '$number_' + seq_name)
-    rc('close all')
-    rc('stop now')
-    """
+    else:
+        rc('write #1 ' + od + '$number_' + seq_name)
+        rc('close all')
+        rc('stop now')
 
 def main():
     # read in args
     _, trgt, tmpl8, od = sys.argv
+    seq_name = tmpl8.split('/')[-1]
     # model target to template
-    model(trgt, templ8, od)
-
+    threading.Thread(target=model(trgt, tmpl8, seq_name)).start()
+    # write results
+    # threading.Thread(target=wait_and_write(seq_name, od)).start()
+    
 if __name__ == '__main__':
     main()

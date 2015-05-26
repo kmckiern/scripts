@@ -11,28 +11,30 @@ from MatchMaker.gui import SSParams
 # borrowed from 
 # http://plato.cgl.ucsf.edu/pipermail/chimera-users/2011-July/006573.html
 def findMAVs():
-    # locate and return the newest instance of MultAlign Viewer
+    # locate and return list of MultAlign Viewer instances
     mavs = [inst for inst in manager.instances
-                    if isinstance(inst, MAViewer)]
+        if isinstance(inst, MAViewer)]
     if not mavs:
         raise AssertionError("No MAV instances!")
     return mavs
 
-def get_frame():
-    ss = [inst for inst in manager.instances
-                    if isinstance(inst, AddSeqDialog)]
-    return ss
-
 fmav = findMAVs()
 target = fmav[0]
 template = fmav[1]
+seq = copy(template.seqs[0])
 seq_name = sys.argv[2].split('/')[-1]
 
 # get template secondary structure matrix
 nb = Pmw.NoteBook()
 structPage = nb.add("From Structure")
 ssParams = SSParams(structPage, template.prefs)
+kw = {}
 kw['ssMatrix'] = ssParams.getMatrix()
 
 # align sequences
-target.alignSeq(copy(template.seqs[0]), displayName=seq_name, matrix=template.prefs[MATRIX], gapOpenStrand=-18.0, scoreGap=-1, scoreGapOpen=-12, gapOpenHelix=-18.0, gapOpenOther=-6.0, gapChar='.', guideSeqs=None, kw)
+# generalize these vars later.  tired of hacking rn.
+target.alignSeq(seq, displayName=seq_name, 
+    matrix=template.prefs[MATRIX], gapOpenStrand=-18.0, 
+    scoreGap=-1, scoreGapOpen=-12, gapOpenHelix=-18.0, 
+    gapOpenOther=-6.0, gapChar='.', guideSeqs=None,
+    ssFraction=0.3, **kw)

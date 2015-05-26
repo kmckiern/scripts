@@ -7,7 +7,6 @@ example usage:
            target_fasta_seq template.pdb path/out.pdb"
 """
 
-import os
 import sys
 from chimera import runCommand as rc
 

@@ -40,7 +40,7 @@ def model(trgt, tmpl8, od):
     target, template = fmav
     tar_seq = target.seqs[0]
     temp_seq = copy(template.seqs[0])
-    seq_name = template.split('/')[-1]
+    seq_name = tmpl8.split('/')[-1]
     
     # align sequences
     # get template secondary structure matrix

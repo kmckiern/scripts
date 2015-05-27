@@ -2,7 +2,6 @@ import sys
 from copy import copy
 
 import Pmw, Tkinter
-from Tkinter import TkG
 from chimera import runCommand as rc
 from chimera import openModels, Molecule
 from chimera.extension import manager
@@ -58,7 +57,6 @@ def model(trgt, tmpl8, od):
         ssFraction=0.3, **kw)
     
     # run modeller on alignment
-    kw = {'licenseKey': 'MODELIRANJE'}
     ModellerBase.model(target, tar_seq, openModels.list(modelTypes=[Molecule]), 
         '5', 1, 1, 0, veryFast=True, **kw)
 

@@ -1,9 +1,8 @@
 import sys
 from copy import copy
-import time
-import threading
 
 import Pmw, Tkinter
+from Tkinter import TkG
 from chimera import runCommand as rc
 from chimera import openModels, Molecule
 from chimera.extension import manager
@@ -13,6 +12,7 @@ from MultAlignViewer.prefs import MATRIX, GAP_OPEN, GAP_EXTEND, \
     USE_SS, SS_MIXTURE, SS_SCORES, HELIX_OPEN, STRAND_OPEN, OTHER_OPEN
 from MatchMaker.gui import SSParams
 from MultAlignViewer import ModellerBase
+from threading import Timer
 
 # borrowed from 
 # http://plato.cgl.ucsf.edu/pipermail/chimera-users/2011-July/006573.html
@@ -24,7 +24,12 @@ def findMAVs():
         raise AssertionError("No MAV instances!")
     return mavs
 
-def model(trgt, tmpl8, seq_name):
+def wait_and_write(seq_name, od):
+    rc('write #1 ' + od + '$number_' + seq_name)
+    rc('close all')
+    rc('stop now')
+
+def model(trgt, tmpl8, od):
     # open target sequence
     rc('open ' + trgt)
     # open template structure, and generate sequence
@@ -34,8 +39,9 @@ def model(trgt, tmpl8, seq_name):
     # MAV objects
     fmav = findMAVs()
     target, template = fmav
-    tar_seq = copy(target.seqs[0])
+    tar_seq = target.seqs[0]
     temp_seq = copy(template.seqs[0])
+    seq_name = template.split('/')[-1]
     
     # align sequences
     # get template secondary structure matrix
@@ -52,27 +58,19 @@ def model(trgt, tmpl8, seq_name):
         ssFraction=0.3, **kw)
     
     # run modeller on alignment
+    kw = {'licenseKey': 'MODELIRANJE'}
     ModellerBase.model(target, tar_seq, openModels.list(modelTypes=[Molecule]), 
-        '5', 1, 1, 0, veryFast=0, **kw)
+        '5', 1, 1, 0, veryFast=True, **kw)
 
-# hack due to the fact that python does not wait for modeller to finish
-# before trying to write output files
-def wait_and_write(seq_name, od):
-    while len(openModels.list(modelTypes=[Molecule])) < 2:
-        time.sleep(120)
-    else:
-        rc('write #1 ' + od + '$number_' + seq_name)
-        rc('close all')
-        rc('stop now')
+    # can't figure out how to make this work :(
+    # wait_and_write(seq_name, od)
 
 def main():
     # read in args
     _, trgt, tmpl8, od = sys.argv
-    seq_name = tmpl8.split('/')[-1]
+
     # model target to template
-    threading.Thread(target=model(trgt, tmpl8, seq_name)).start()
-    # write results
-    # threading.Thread(target=wait_and_write(seq_name, od)).start()
+    model(trgt, tmpl8, od)
     
 if __name__ == '__main__':
     main()

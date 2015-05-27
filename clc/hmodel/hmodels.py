@@ -35,8 +35,8 @@ def main():
     print '?', templates
 
     for t in templates:
-        model = sr + 'clc/hmodel/hmodel.py ' + seq + ' ' + t + ' ' + out
-        print call_chimera(model)
+        model = sr + 'clc/hmodel/align_model.py ' + seq + ' ' + templ8s + t + ' ' + out
+        call_chimera(model)
 
 if __name__ == '__main__':
     main()

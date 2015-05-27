@@ -22,7 +22,6 @@ from toolz import call_cl
 def call_chimera(args):
     # MAV requires gui
     command = 'chimera --script \'' + args + '\''
-    print command
     call_cl(command)
 
 def main():
@@ -32,7 +31,6 @@ def main():
     out = args.od + pref 
 
     templates = [f for f in os.listdir(templ8s) if '.pdb' in f]
-    print '?', templates
 
     for t in templates:
         model = sr + 'clc/hmodel/align_model.py ' + seq + ' ' + templ8s + t + ' ' + out

@@ -11,8 +11,14 @@ set A [orient $sel [lindex $I 1] {0 1 0}]
 $sel move $A
 set I [draw principalaxes $sel]
 
+# move protein to center
+$sel moveby [vecscale -1.0 [measure center $sel]]
+
 # additional rotation
 set matrix [transaxis x 90]
+$sel move $matrix
+# for better packing efficiency
+set matrix [transaxis z -45]
 $sel move $matrix
 
 # save new pdb

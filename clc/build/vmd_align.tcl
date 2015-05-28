@@ -23,3 +23,5 @@ $sel move $matrix
 
 # save new pdb
 $sel writepdb $argv
+
+quit

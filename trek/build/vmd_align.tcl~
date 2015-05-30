@@ -17,7 +17,7 @@ $sel moveby [vecscale -1.0 [measure center $sel]]
 # additional rotations
 set matrix [transaxis x 180]
 $sel move $matrix
-set matrix [transaxis z -45]
+set matrix [transaxis z 45]
 $sel move $matrix
 
 # save new pdb

@@ -15,12 +15,11 @@ def model(tmpl8, loops):
     # MAV objects
     fmav = findMAVs()
     template = fmav[0]
-    tar_seq = template.seqs[0]
     temp_seq = template.seqs[0]
     seq_name = tmpl8.split('/')[-1]
     
     # run modeller on alignment
-    ModellerBase.model(template, tar_seq, openModels.list(modelTypes=[Molecule]), 
+    ModellerBase.model(template, temp_seq, openModels.list(modelTypes=[Molecule]), 
         '10', 1, 1, 0, veryFast=0, loopInfo=('', [loops]), **kw)
 
 def main():

@@ -24,10 +24,11 @@ def model(tmpl8, loops):
 
 def main():
     # read in args
-    _, tmpl8, loops = sys.argv
+    _, tmpl8, loop_str = sys.argv
+    loop = tuple([int(i) for i in loop_str.split(',')])
 
     # model target to template
-    model(tmpl8, loops)
+    model(tmpl8, loop)
     
 if __name__ == '__main__':
     main()

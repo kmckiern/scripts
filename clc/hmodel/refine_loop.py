@@ -10,7 +10,7 @@ from align_model import findMAVs
 def model(tmpl8, loops):
     # open template structure, and generate sequence
     rc('open ' + tmpl8)
-    rc('sequence #0')
+    rc('sequence #0; wait')
     
     # MAV objects
     fmav = findMAVs()
@@ -20,15 +20,19 @@ def model(tmpl8, loops):
     
     # run modeller on alignment
     ModellerBase.model(template, temp_seq, openModels.list(modelTypes=[Molecule]), 
-        '10', 1, 1, 0, veryFast=0, loopInfo=('', [loops]), **kw)
+        '10', 1, 1, 0, veryFast=0, loopInfo=('', loops), **kw)
 
 def main():
     # read in args
-    _, tmpl8, loop_str = sys.argv
-    loop = tuple([int(i) for i in loop_str.split(',')])
+    _, tmpl8, l0_str, l1_str = sys.argv
+    loop0 = tuple([int(i) for i in l0_str.split(',')])
+    loops = [loop0]
+    if l1_str != 'None':
+        loop1 = tuple([int(i) for i in l1_str.split(',')])
+        loops.append(loop1)
 
     # model target to template
-    model(tmpl8, loop)
+    model(tmpl8, loops)
     
 if __name__ == '__main__':
     main()

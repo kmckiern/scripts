@@ -40,4 +40,15 @@ for i in "${STDIN[@]}"; do
     sed -i '.bak' '/H2  WAT/a\
     TER\
     '  $i
+
+    # membrane
+    sed -i '.bak' '/H16Z POPC/a\
+    TER\
+    '  $i
+    sed -i '.bak' '/H16Z POPE/a\
+    TER\
+    '  $i
+    sed -i '.bak' '/H16Z POPS/a\
+    TER\
+    '  $i
 done

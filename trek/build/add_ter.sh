@@ -23,7 +23,7 @@ for i in "${STDIN[@]}"; do
     '  $i
 
     # properly specify ions
-    sed -i '.bak' 's/CAL/Cl-/g' $i
+    sed -i '.bak' 's/CLA/Cl-/g' $i
     sed -i '.bak' 's/POT/K+ /g' $i
 
     # ion ter cards

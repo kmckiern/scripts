@@ -58,7 +58,7 @@ def model(trgt, tmpl8, od):
     
     # run modeller on alignment
     ModellerBase.model(target, tar_seq, openModels.list(modelTypes=[Molecule]), 
-        '5', 1, 1, 0, veryFast=True, **kw)
+        '5', 1, 1, 0, veryFast=False, **kw)
 
     # can't figure out how to make this work :(
     # wait_and_write(seq_name, od)

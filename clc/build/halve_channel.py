@@ -9,7 +9,8 @@ parser.add_argument('--pdb', type=str, help='system pdb')
 args = parser.parse_args()
 
 def main():
-    system = mdtraj.load(args.pdb)
+    name = args.pdb
+    system = mdtraj.load(name)
     pi = system.topology.select('protein')
     p = system.atom_slice(pi)
 
@@ -17,8 +18,8 @@ def main():
     first = np.arange(na/2)
     second = np.arange(na/2, na)
 
-    p.atom_slice(first).save_pdb('p0_' + pro)
-    p.atom_slice(second).save_pdb('p1_' + pro)
+    p.atom_slice(first).save_pdb('p0/' + name)
+    p.atom_slice(second).save_pdb('p1/' + name)
 
 if __name__ == '__main__':
     main()

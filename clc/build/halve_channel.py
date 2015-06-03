@@ -4,7 +4,7 @@ import argparse
 import numpy as np
 import mdtraj
 
-parser = argparse.ArgumentParser(description='use chimera to combine protein and ligand pdbs')
+parser = argparse.ArgumentParser(description='split the dimer into two monomer pdbs')
 parser.add_argument('--pdb', type=str, help='system pdb')
 args = parser.parse_args()
 

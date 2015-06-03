@@ -21,6 +21,6 @@ set matrix [transaxis z -45]
 $sel move $matrix
 
 # save new pdb
-sel writepdb $argv
+$sel writepdb $argv
 
 quit

@@ -30,11 +30,13 @@ def main():
     templ8s = args.templates
     out = args.od + pref 
 
-    templates = [f for f in os.listdir(templ8s) if '.pdb' in f]
+    model = sr + 'clc/hmodel/align_model.py ' + seq + ' ' + templ8s + ' ' + out
+    call_chimera(model)
+    """templates = [f for f in os.listdir(templ8s) if '.pdb' in f]
 
     for t in templates:
         model = sr + 'clc/hmodel/align_model.py ' + seq + ' ' + templ8s + t + ' ' + out
-        call_chimera(model)
+        call_chimera(model)"""
 
 if __name__ == '__main__':
     main()

@@ -13,6 +13,7 @@ import numpy as np
 import sys
 sys.path.insert(0, '/home/kmckiern/scripts/py_general/')
 from toolz import call_cl
+import IPython
 
 parser = argparse.ArgumentParser(description='trim a pdb file based on cutoff \
     from some ligand')
@@ -44,9 +45,7 @@ def main():
     # get indices of receptor within distance d of ligand
     comb = mdtraj.load(temp)
     # get ligand indices
-    ca = comb.n_atoms
-    la = l.n_atoms
-    li = np.arange(ca-la, ca)
+    li = comb.topology.select('not protein')
     # find neighbors
     neighbors = mdtraj.compute_neighbors(comb, d, li)[0]
     # remove ligand from neighbor list (symmetric diff)
@@ -55,6 +54,7 @@ def main():
     comb = mdtraj.load(temp)
     comb.restrict_atoms(n)
     comb.save_pdb(pref + '_trim.pdb')
+    IPython.embed()
 
 if __name__ == '__main__':
     main()

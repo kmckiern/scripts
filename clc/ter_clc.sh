@@ -8,6 +8,9 @@
 STDIN=( ${@} )
 
 for i in "${STDIN[@]}"; do
+    # remove hydrogens
+    /Applications/VMD\ 1.9.1.app/Contents/MacOS/startup.command -m $i -e ~/Dropbox/scripts/trek/build/rm_hydrogen.tcl -args noH_${i}
+
     # delete random existing ter cards
     sed -i '.bak' '/TER/d' $i
 
@@ -66,7 +69,4 @@ for i in "${STDIN[@]}"; do
     sed -i '.bak' '/H2  WAT/a\
     TER\
     '  $i
-
-    # remove hydrogens
-    /Applications/VMD\ 1.9.1.app/Contents/MacOS/startup.command -m $i -e ~/Dropbox/scripts/trek/build/rm_hydrogen.tcl -args noH_${i}
 done

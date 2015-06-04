@@ -41,6 +41,10 @@ for i in "${STDIN[@]}"; do
     TER\
     '  $i
 
+    sed -i '.bak' '/O12 PGR/a\
+    TER\
+    '  $i
+
     # ions
     sed -i '.bak' '/Cl- Cl-/a\
     TER\
@@ -62,4 +66,7 @@ for i in "${STDIN[@]}"; do
     sed -i '.bak' '/H2  WAT/a\
     TER\
     '  $i
+
+    # remove hydrogens
+    /Applications/VMD\ 1.9.1.app/Contents/MacOS/startup.command -m $i -e ~/Dropbox/scripts/trek/build/rm_hydrogen.tcl -args noH_${i}
 done

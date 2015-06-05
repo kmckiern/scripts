@@ -1,5 +1,5 @@
 # cut water and lipids
-set sel [atomselect top "protein or ions"]
+set sel [atomselect top "protein"]
 # write
 $sel writepdb $argv
 

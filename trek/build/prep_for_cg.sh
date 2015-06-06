@@ -12,7 +12,4 @@ for i in "${STDIN[@]}"; do
     sed -i '.bak' '/PC1/d' $i
     sed -i '.bak' '/40D/d' $i
     sed -i '.bak' '/ CD /d' $i
-
-    # properly specify ions
-    sed -i '.bak' 's/ K  / POT/g' $i
 done

@@ -9,12 +9,6 @@ import numpy as np
 import argparse
 import mdtraj
 
-parser = argparse.ArgumentParser(description='equilibrate structures')
-parser.add_argument('--pdb', type=str, help='system pdb preface')
-args = parser.parse_args()
-systm = args.pdb
-print(systm)
-
 # benchmarking
 current_milli_time = lambda: int(round(time.time() * 1000))
 def milli_to_hr(millis):
@@ -23,7 +17,6 @@ def t_diff(start, finish, ts, steps):
     elapsed = milli_to_hr(finish-start)
     ns = (ts * steps * 1.0) / (1000000.0)
     return elapsed, elapsed / ns
-
 # simulation setup and running
 def setup_sim(temperature, timestep, coordinates, which_pu, box, top):
     system = prmtop.createSystem(nonbondedMethod=app.PME,
@@ -58,6 +51,15 @@ def dynamix(simulation, ns, temperature, timestep, which_pu, min=False):
     simulation.step(ns)
     return simulation
 
+parser = argparse.ArgumentParser(description='equilibrate structures')
+parser.add_argument('--pdb', type=str, help='system pdb preface')
+args = parser.parse_args()
+systm = args.pdb
+print(systm)
+# load initial parameters and geometry
+prmtop = app.AmberPrmtopFile(systm + '.prmtop')
+inpcrd = app.AmberInpcrdFile(systm + '.inpcrd')
+
 # heating temperatures, 50 K increments
 t0_0, t1_0, t1_1, t1_2, t1_3, t2_0 = np.arange(50.0, 301.0, 50.0)
 # timesteps
@@ -68,10 +70,6 @@ minstep = 5000
 nstep0 = 10000
 nstep1 = 50000
 nstep2 = 5000000
-
-# load initial parameters and geometry
-prmtop = app.AmberPrmtopFile(systm + '.prmtop')
-inpcrd = app.AmberInpcrdFile(systm + '.inpcrd')
 
 #### simulations ####
 ## cpu / 1 fs timestep ##

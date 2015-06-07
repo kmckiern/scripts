@@ -10,7 +10,7 @@ STDIN=( ${@} )
 for i in "${STDIN[@]}"; do
     cp $i wH_${i}
     # remove hydrogens
-    /Applications/VMD\ 1.9.1.app/Contents/MacOS/startup.command -m wH_${i} -e ~/Dropbox/scripts/manip_proteins/rm_hydrogen.tcl -args $i
+    /Applications/VMD\ 1.9.1.app/Contents/MacOS/startup.command -m wH_${i} -e ~/Dropbox/scripts/trek/build/rm_hydrogen.tcl -args $i
 
     # delete random existing ter cards
     sed -i '.bak' '/TER/d' $i

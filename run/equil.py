@@ -67,7 +67,7 @@ ts1 = 2.0
 minstep = 5000
 nstep0 = 10000
 nstep1 = 50000
-nstep3 = 5000000
+nstep2 = 5000000
 
 # load initial parameters and geometry
 prmtop = app.AmberPrmtopFile(systm + '.prmtop')
@@ -92,13 +92,13 @@ s4 = dynamix(s3, nstep1, t1_3, ts1, 'gpu')
 pre_eq = current_milli_time()
 s5 = dynamix(s4, nstep2, t2_0, ts1, 'gpu')
 post_eq = current_milli_time()
-total_eq, eq_rate = t_diff(pre_eq, post_eq, ts1, nstep3)
+total_eq, eq_rate = t_diff(pre_eq, post_eq, ts1, nstep2)
 print('bench: ' + eq_rate + ' hr/ns')
 
 # record results
-positions = s6.context.getState(getPositions=True).getPositions()
-of = systm + '_eq_' + str(nstep3 * ts1 / 1000.0) + 'ns.pdb'
-app.PDBFile.writeFile(s6.topology, positions, open(of, 'w'))
+positions = s5.context.getState(getPositions=True).getPositions()
+of = systm + '_eq_' + str(nstep2 * ts1 / 1000.0) + 'ns.pdb'
+app.PDBFile.writeFile(s5.topology, positions, open(of, 'w'))
 # for bookkeeping
 x = mdtraj.load(of)
 print('na: ' + x.n_atoms)

@@ -19,6 +19,7 @@ def model(tmpl8, loops):
     seq_name = tmpl8.split('/')[-1]
     
     # run modeller on alignment
+    kw = {'licenseKey': 'MODELIRANJE'}
     ModellerBase.model(template, temp_seq, openModels.list(modelTypes=[Molecule]), 
         '10', 1, 1, 0, veryFast=0, loopInfo=('', loops), **kw)
 

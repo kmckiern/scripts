@@ -8,9 +8,9 @@
 STDIN=( ${@} )
 
 for i in "${STDIN[@]}"; do
-    cp $i wH_${i}
+    cp $i og.${i}
     # remove hydrogens
-    /Applications/VMD\ 1.9.1.app/Contents/MacOS/startup.command -m wH_${i} -e ~/Dropbox/scripts/trek/build/rm_hydrogen.tcl -args $i
+    /Applications/VMD\ 1.9.1.app/Contents/MacOS/startup.command -m $i -e ~/Dropbox/scripts/manip_proteins/rm_hydrogen.tcl -args $i
 
     # delete random existing ter cards
     sed -i '.bak' '/TER/d' $i
@@ -22,10 +22,9 @@ for i in "${STDIN[@]}"; do
     sed -i '.bak' 's/ENDMDL/END/g' $i
 
     # ter cards to end of protein chains
-    sed -i '.bak' '/OT2 LYS/a\
-    TER\
-    '  $i
-    sed -i '.bak' '/OT2 VAL/a\
+    sed -i '.bak' 's/OT1/O  /g' $i
+    sed -i '.bak' 's/OT2/OXT/g' $i
+    sed -i '.bak' '/OXT/a\
     TER\
     '  $i
 

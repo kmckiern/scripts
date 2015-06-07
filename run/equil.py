@@ -7,7 +7,6 @@ import os
 import time
 import numpy as np
 import argparse
-import IPython
 
 parser = argparse.ArgumentParser(description='equilibrate structures')
 parser.add_argument('--pdb', type=str, help='system pdb preface')
@@ -39,8 +38,7 @@ def setup_sim(temperature, timestep, coordinates, which_pu, box, top):
     elif which_pu == 'gpu':
         platform = mm.Platform.getPlatformByName('CUDA')
         properties = {'CudaPrecision': 'mixed'}
-        simulation = app.Simulation(simulation.topology, system, integrator, platform,
-            properties)
+        simulation = app.Simulation(top, system, integrator, platform, properties)
     simulation.context.setPositions(coordinates)
     return simulation
 
@@ -75,13 +73,14 @@ simulation.step(nstep0)
 # gpu / 2 fs timestep
 # heating, 100 to 200 K over 4 ps
 box = simulation.system.getDefaultPeriodicBoxVectors()
-IPython.embed()
-simulation = setup_sim(t1, ts1, positions, 'gpu', box, simulation.topology)
+top = simulation.topology
+simulation = setup_sim(t1, ts1, positions, 'gpu', box, top)
 simulation.context.setVelocitiesToTemperature(t1*unit.kelvin)
 simulation.step(nstep1)
 # heating, 200 to 300 K for 5 ns
 box = simulation.system.getDefaultPeriodicBoxVectors()
-simulation = setup_sim(t2, ts1, positions, 'gpu', box, simulation.topology)
+top = simulation.topology
+simulation = setup_sim(t2, ts1, positions, 'gpu', box, top)
 simulation.context.setVelocitiesToTemperature(t2*unit.kelvin)
 pre_eq = current_milli_time()
 simulation.step(nstep3)

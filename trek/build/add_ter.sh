@@ -8,6 +8,10 @@
 STDIN=( ${@} )
 
 for i in "${STDIN[@]}"; do
+    cp $i wH_${i}
+    # remove hydrogens
+    /Applications/VMD\ 1.9.1.app/Contents/MacOS/startup.command -m wH_${i} -e ~/Dropbox/scripts/trek/build/rm_hydrogen.tcl -args $i
+
     # delete random existing ter cards
     sed -i '.bak' '/TER/d' $i
     # delete preface
@@ -18,14 +22,16 @@ for i in "${STDIN[@]}"; do
     sed -i '.bak' 's/ENDMDL/END/g' $i
 
     # ter cards to end of protein chains
-    sed -i '.bak' '/OT2 THR/a\
+    sed -i '.bak' '/OT2 LYS/a\
+    TER\
+    '  $i
+    sed -i '.bak' '/OT2 VAL/a\
     TER\
     '  $i
 
     # properly specify ions
     sed -i '.bak' 's/CLA/Cl-/g' $i
     sed -i '.bak' 's/POT/K+ /g' $i
-
     # ion ter cards
     sed -i '.bak' '/Cl- Cl-/a\
     TER\
@@ -37,18 +43,28 @@ for i in "${STDIN[@]}"; do
     # water
     sed -i '.bak' 's/TIP3/WAT /g' $i
     sed -i '.bak' 's/OH2 WAT/O   WAT/g' $i
-    sed -i '.bak' '/H2  WAT/a\
+    sed -i '.bak' '/O   WAT/a\
     TER\
     '  $i
 
     # membrane
-    sed -i '.bak' '/H16Z POPC/a\
+    # lipids
+    sed -i '.bak' '/C118 OL/a\
     TER\
     '  $i
-    sed -i '.bak' '/H16Z POPE/a\
+    sed -i '.bak' '/O12 PC/a\
     TER\
     '  $i
-    sed -i '.bak' '/H16Z POPS/a\
+    sed -i '.bak' '/O12 PE/a\
     TER\
     '  $i
+    sed -i '.bak' '/C116 PA/a\
+    TER\
+    '  $i
+
+    # charmmgui artifact
+    sed -i '.bak' 's/CD  ILE/CD1 ILE/g' $i
+
+    # hist protonation
+    sed -i '.bak' 's/HSD/HIE/g' $i
 done

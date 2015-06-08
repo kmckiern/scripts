@@ -8,6 +8,7 @@ import time
 import numpy as np
 import argparse
 import mdtraj
+import IPython
 
 # benchmarking
 current_milli_time = lambda: int(round(time.time() * 1000))
@@ -43,12 +44,27 @@ def dynamix(simulation, ns, temperature, timestep, which_pu, min=False):
         top = prmtop.topology
         simulation = setup_sim(temperature, timestep, positions, which_pu, box, top)
         simulation.minimizeEnergy(maxIterations=minstep)
+        positions = simulation.context.getState(getPositions=True).getPositions()
+        of = systm + '_min_' + str(temperature).split('.')[0] + '.pdb'
+        app.PDBFile.writeFile(top, positions, open(of, 'w'))
     positions = simulation.context.getState(getPositions=True).getPositions()
-    box = simulation.system.getDefaultPeriodicBoxVectors()
+    box = simulation.context.getState().getPeriodicBoxVectors()
+    of = systm + '_eq_' + str(temperature).split('.')[0] + '.pdb'
+    with open(of + '.box', 'w') as file:
+        for item in box:
+            file.write('{}\n'.format(item))
     top = simulation.topology
     simulation = setup_sim(temperature, timestep, positions, which_pu, box, top)
     simulation.context.setVelocitiesToTemperature(temperature*unit.kelvin)
+    simulation.reporters.append(app.StateDataReporter(stdout, 1000, step=True, 
+        potentialEnergy=True, temperature=True, volume=True, progress=True, 
+        remainingTime=True, speed=True, totalSteps=1000, separator='\t'))
     simulation.step(ns)
+    # record results
+    positions = simulation.context.getState(getPositions=True).getPositions()
+    box = simulation.context.getState().getPeriodicBoxVectors()
+    top = simulation.topology
+    app.PDBFile.writeFile(top, positions, open(of, 'w'))
     return simulation
 
 parser = argparse.ArgumentParser(description='equilibrate structures')
@@ -66,19 +82,20 @@ t0_0, t1_0, t1_1, t1_2, t1_3, t2_0 = np.arange(50.0, 301.0, 50.0)
 ts0 = 1.0
 ts1 = 2.0
 # number of steps for each process
-minstep = 5000
+minstep = 1000
 nstep0 = 10000
 nstep1 = 50000
 nstep2 = 5000000
 
 #### simulations ####
 ## cpu / 1 fs timestep ##
-# minimize and 0 to 50 K for 50 ps
-s0 = dynamix(None, nstep0, t1_0, ts0, 'cpu', min=True)
+# minimize and 0 to 50 K for 10 ps
+s0 = dynamix(None, nstep0, t0_0, ts0, 'cpu', min=True)
+## gpu / 1 fs timestep ##
+# heating, 50 to 100 K for 20 ps
+s1 = dynamix(s0, 2*nstep1, t1_0, ts0, 'gpu')
 ## gpu / 2 fs timestep ##
-# heating, 50 to 250 K for 100 ps each
-# 50-100
-s1 = dynamix(s0, nstep1, t1_0, ts1, 'gpu')
+# heating, 100 to 250 K for 100 ps each
 # 100-150
 s2 = dynamix(s1, nstep1, t1_1, ts1, 'gpu')
 # 150-200
@@ -91,12 +108,4 @@ pre_eq = current_milli_time()
 s5 = dynamix(s4, nstep2, t2_0, ts1, 'gpu')
 post_eq = current_milli_time()
 total_eq, eq_rate = t_diff(pre_eq, post_eq, ts1, nstep2)
-print('bench: ' + eq_rate + ' hr/ns')
-
-# record results
-positions = s5.context.getState(getPositions=True).getPositions()
-of = systm + '_eq_' + str(nstep2 * ts1 / 1000.0) + 'ns.pdb'
-app.PDBFile.writeFile(s5.topology, positions, open(of, 'w'))
-# for bookkeeping
-x = mdtraj.load(of)
-print('na: ' + x.n_atoms)
+print('bench: ' + str(eq_rate) + ' hr/ns')

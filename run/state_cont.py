@@ -25,9 +25,9 @@ ns = args.nstep
 prev = args.prev
 save_spec = args.save
 
-system = mm.XmlSerializer.deserializeSystem(open('system' + prev + '.xml').read())
-state = mm.XmlSerializer.deserialize(open('state' + prev + '.xml').read())
-integrator = mm.XmlSerializer.deserialize(open('integrator' + prev + '.xml').read())
+system = mm.XmlSerializer.deserializeSystem(open('system_' + prev + '.xml').read())
+state = mm.XmlSerializer.deserialize(open('state_' + prev + '.xml').read())
+integrator = mm.XmlSerializer.deserialize(open('integrator_' + prev + '.xml').read())
 
 platform = mm.Platform.getPlatformByName('CUDA')
 properties = {'CudaPrecision': 'mixed'}
@@ -50,8 +50,8 @@ simulation.reporters.append(app.StateDataReporter(stdout, 500000, step=True,
 simulation.step(ns)
 
 # save
-serializeObject(system, 'system' + save_spec + '.xml')
-serializeObject(integrator,'integrator' + save_spec + '.xml')
+serializeObject(system, 'system_' + save_spec + '.xml')
+serializeObject(integrator,'integrator_' + save_spec + '.xml')
 state = simulation.context.getState(getPositions=True, getVelocities=True,
     getForces=True, getEnergy=True, getParameters=True, enforcePeriodicBox=True)
-serializeObject(state, 'state' + save_spec + '.xml')
+serializeObject(state, 'state_' + save_spec + '.xml')

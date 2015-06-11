@@ -7,6 +7,7 @@ import os
 import time
 import numpy as np
 import argparse
+import IPython
 
 # serializing
 def serializeObject(obj, filename):
@@ -16,7 +17,9 @@ def serializeObject(obj, filename):
 
 parser = argparse.ArgumentParser(description='continue system equil from state xmls')
 parser.add_argument('--pdb', type=str, help='IC pdb')
+parser.add_argument('--nmin', type=int, help='number of minimization steps', default=100)
 parser.add_argument('--nstep', type=int, help='number of steps')
+parser.add_argument('--sint', type=int, help='save interval', default=500000)
 parser.add_argument('--prev', type=str, help='file specification from which we are resuming')
 parser.add_argument('--save', type=str, help='file specification to which we are saving')
 args = parser.parse_args()
@@ -41,12 +44,14 @@ for key, value in state.getParameters().iteritems():
     simulation.context.setParameter(key, value)
 
 # save every 1 ns
-simulation.reporters.append(app.DCDReporter('trajectory' + save_spec + '.dcd', 500000))
-simulation.reporters.append(app.StateDataReporter(stdout, 500000, step=True,
+save_interval = args.sint
+simulation.reporters.append(app.DCDReporter('trajectory_' + save_spec + '.dcd', save_interval))
+simulation.reporters.append(app.StateDataReporter(stdout, save_interval, step=True,
     potentialEnergy=True, temperature=True, progress=True, remainingTime=True,
     speed=True, totalSteps=ns, separator='\t'))
 
 # run
+simulation.minimizeEnergy(maxIterations=args.nmin)
 simulation.step(ns)
 
 # save

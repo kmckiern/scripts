@@ -26,6 +26,6 @@ qx, qy, qz = box_vecs
 qvs = [i.value_in_unit(angstrom) for i in box_vecs]
 
 of = 'box_' + suff + '.dat'
-with open(of + '.box', 'w') as file:
+with open(of, 'w') as file:
     for item in qvs:
         file.write('{}\n'.format(item))

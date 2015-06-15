@@ -9,6 +9,23 @@ import numpy as np
 import argparse
 import mdtraj
 import IPython
+from simtk.unit import Quantity, nanometer, angstrom
+
+parser = argparse.ArgumentParser(description='equilibrate structures')
+parser.add_argument('--pdb', type=str, help='system pdb preface')
+parser.add_argument('--nstep', type=int, help='number of steps for final eq step')
+parser.add_argument('--sint', type=int, help='save interval', default=500000)
+parser.add_argument('--save', type=str, help='file specification to which we are saving')
+args = parser.parse_args()
+
+systm = args.pdb
+ns = args.nstep
+sint = args.sint
+save = args.save
+print(systm)
+# load initial parameters and geometry
+prmtop = app.AmberPrmtopFile(systm + '.prmtop')
+inpcrd = app.AmberInpcrdFile(systm + '.inpcrd')
 
 # benchmarking
 current_milli_time = lambda: int(round(time.time() * 1000))
@@ -20,6 +37,7 @@ def t_diff(start, finish, ts, steps):
     return elapsed, elapsed / ns
 # simulation setup and running
 def setup_sim(prmtop, temperature, timestep, coordinates, which_pu, top, box):
+    # update topology box vectors so they're save to the pdb correctly
     system = prmtop.createSystem(nonbondedMethod=app.PME,
         nonbondedCutoff=1.0*unit.nanometers, constraints=app.HBonds, rigidWater=True,
         ewaldErrorTolerance=0.0005)
@@ -36,7 +54,8 @@ def setup_sim(prmtop, temperature, timestep, coordinates, which_pu, top, box):
         properties = {'CudaPrecision': 'mixed'}
         simulation = app.Simulation(top, system, integrator, platform, properties)
     simulation.context.setPositions(coordinates)
-    return simulation
+    IPython.embed()
+    return simulation, system, integrator
 def dynamix(systm, simulation, ns, prmtop, temperature, timestep, which_pu, min=False, print_box=False):
     if simulation == None:
         positions = inpcrd.positions
@@ -46,7 +65,10 @@ def dynamix(systm, simulation, ns, prmtop, temperature, timestep, which_pu, min=
         box = simulation.context.getState().getPeriodicBoxVectors()
     if min != False:
         top = prmtop.topology
-        simulation = setup_sim(prmtop, temperature, timestep, positions, which_pu, top, box)
+        bv = np.diag(box)
+        qvs = [i.value_in_unit(nanometer) for i in bv]
+        top.setUnitCellDimensions(Quantity(value=tuple(qvs), unit=nanometer))
+        simulation, system, integrator = setup_sim(prmtop, temperature, timestep, positions, 'cpu', top, box)
         simulation.minimizeEnergy(maxIterations=min)
         positions = simulation.context.getState(getPositions=True).getPositions()
         of = systm + '_min.pdb'
@@ -57,63 +79,72 @@ def dynamix(systm, simulation, ns, prmtop, temperature, timestep, which_pu, min=
         with open(of + '.box', 'w') as file:
             for item in box:
                 file.write('{}\n'.format(item))
-    top = simulation.topology
-    simulation = setup_sim(prmtop, temperature, timestep, positions, which_pu, top, box)
+    top = prmtop.topology
+    simulation, system, integrator = setup_sim(prmtop, temperature, timestep, positions, which_pu, top, box)
     simulation.context.setVelocitiesToTemperature(temperature*unit.kelvin)
-    simulation.reporters.append(app.StateDataReporter('watch', 1, step=True, 
-        potentialEnergy=True, temperature=True, volume=True, progress=True, 
-        remainingTime=True, speed=True, totalSteps=1000, separator='\t'))
+    # save trj every sint
+    simulation.reporters.append(app.DCDReporter('trajectory.dcd', sint))
+    simulation.reporters.append(app.StateDataReporter(stdout, sint, step=True,
+        potentialEnergy=True, temperature=True, progress=True, remainingTime=True,
+        speed=True, totalSteps=ns, separator='\t'))
     simulation.step(ns)
     # record results
     positions = simulation.context.getState(getPositions=True).getPositions()
     box = simulation.context.getState().getPeriodicBoxVectors()
-    top = simulation.topology
+    top = prmtop.topology
     app.PDBFile.writeFile(top, positions, open(of, 'w'))
-    return simulation
+    return simulation, system, integrator
+# serializing
+def serializeObject(obj, objname):
+    filename = objname
+    objfile = open(filename,'w')
+    objfile.write(mm.XmlSerializer.serialize(obj))
+    objfile.close()
 
-def main():
-    parser = argparse.ArgumentParser(description='equilibrate structures')
-    parser.add_argument('--pdb', type=str, help='system pdb preface')
-    args = parser.parse_args()
-    systm = args.pdb
-    print(systm)
-    # load initial parameters and geometry
-    prmtop = app.AmberPrmtopFile(systm + '.prmtop')
-    inpcrd = app.AmberInpcrdFile(systm + '.inpcrd')
-    
+def main(): 
     # heating temperatures, 50 K increments
+    t_min = 1.0
     t0_0, t1_0, t1_1, t1_2, t1_3, t2_0 = np.arange(50.0, 301.0, 50.0)
+    # for debugging: t0_0, t1_0, t1_1, t1_2, t1_3, t2_0 = 10.0*np.ones(6)
     # timesteps
     ts0 = 1.0
     ts1 = 2.0
     # number of steps for each process
-    minstep = 1000
-    nstep0 = 10000
+    minstep = 5000
+    nstep0 = 1000
     nstep1 = 50000
-    nstep2 = 5000000
+    nstep2 = ns
     
     #### simulations ####
     ## cpu / 1 fs timestep ##
-    # minimize and 0 to 50 K for 10 ps
-    s0 = dynamix(systm, None, nstep0, prmtop, t0_0, ts0, 'cpu', min=minstep)
+    # minimize and 0 to 1 K for 1 ps
+    smin, sysmin, imin = dynamix(systm, None, nstep0, prmtop, t_min, ts0, 'cpu', min=minstep)
     ## gpu / 1 fs timestep ##
-    # heating, 50 to 100 K for 20 ps
-    s1 = dynamix(systm, s0, 2*nstep1, prmtop, t1_0, ts0, 'gpu')
+    # heating, 1 to 50 K for 100 ps
+    s0, sys0, i0 = dynamix(systm, smin, 2*nstep1, prmtop, t0_0, ts0, 'gpu')
     ## gpu / 2 fs timestep ##
-    # heating, 100 to 250 K for 100 ps each
+    # heating, 50 to 250 K for 100 ps each
+    # 50-100
+    s1, sys1, i1 = dynamix(systm, s0, nstep1, prmtop, t1_0, ts1, 'gpu')
     # 100-150
-    s2 = dynamix(systm, s1, nstep1, prmtop, t1_1, ts1, 'gpu')
+    s2, sys2, i2 = dynamix(systm, s1, nstep1, prmtop, t1_1, ts1, 'gpu')
     # 150-200
-    s3 = dynamix(systm, s2, nstep1, prmtop, t1_2, ts1, 'gpu')
+    s3, sys3, i3 = dynamix(systm, s2, nstep1, prmtop, t1_2, ts1, 'gpu')
     # 200-250
-    s4 = dynamix(systm, s3, nstep1, prmtop, t1_3, ts1, 'gpu')
+    s4, sys4, i4 = dynamix(systm, s3, nstep1, prmtop, t1_3, ts1, 'gpu')
     # heating, 250 to 300 K for 10 ns
     # 250-300
     pre_eq = current_milli_time()
-    s5 = dynamix(systm, s4, nstep2, prmtop, t2_0, ts1, 'gpu')
+    simulation, system, integrator = dynamix(systm, s4, nstep2, prmtop, t2_0, ts1, 'gpu')
     post_eq = current_milli_time()
     total_eq, eq_rate = t_diff(pre_eq, post_eq, ts1, nstep2)
     print('bench: ' + str(eq_rate) + ' hr/ns')
+
+    serializeObject(system, 'system' + save + '.xml')
+    serializeObject(integrator,'integrator' + save + '.xml')
+    state = simulation.context.getState(getPositions=True, getVelocities=True,
+        getForces=True, getEnergy=True, getParameters=True, enforcePeriodicBox=True)
+    serializeObject(state, 'state' + save + '.xml')
 
 if __name__ == '__main__':
     main()

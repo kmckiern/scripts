@@ -7,10 +7,6 @@ for superposing two atoms over a subset of atom indices
 import argparse
 import mdtraj
 import numpy as np
-import sys
-sys.path.insert(0, '/home/kmckiern/scripts/py_general/')
-from toolz import call_cl
-import IPython
 
 parser = argparse.ArgumentParser(description='superpose molecules over subset of atoms')
 parser.add_argument('--ref', type=str, help='pdb to which we are aligning')

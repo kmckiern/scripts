@@ -39,7 +39,8 @@ def main():
                         newid = resid
                     else:
                         newid += 1
-                        iterd = True
+                    # don't iterate resid until next mem_res[0]
+                    iterd = True
                 if residue == mem_res[2]:
                     iterd = False
                 print ('before: ', line, residue, resid, newid) 

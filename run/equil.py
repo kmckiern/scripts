@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser(description='equilibrate structures')
 parser.add_argument('--pdb', type=str, help='system pdb preface')
 parser.add_argument('--nstep', type=int, help='number of steps for final eq step', default=5000000)
 parser.add_argument('--sint', type=int, help='save interval', default=500000)
-parser.add_argument('--save', type=str, help='file specification to which we are saving')
+parser.add_argument('--save', type=str, help='file specification to which we are saving', default='10ns')
 args = parser.parse_args()
 
 systm = args.pdb
@@ -73,7 +73,6 @@ def dynamix(systm, simulation, ns, prmtop, temperature, timestep, which_pu, min=
         positions = simulation.context.getState(getPositions=True).getPositions()
         of = systm + '_min.pdb'
         app.PDBFile.writeFile(top, positions, open(of, 'w'))
-    IPython.embed()
     slen = str(ns*timestep/1000.0).replace('.', 'p')
     of = systm + '_eq_' + str(temperature).split('.')[0] + '_' + slen + '.pdb'
     if print_box:

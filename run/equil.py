@@ -114,17 +114,15 @@ def main():
     ts0 = 1.0
     ts1 = 2.0
     # number of steps for each process
-    minstep = 200
-    nstep0 = 200
-    nstep1 = 200
-    nstep2 = 200 #ns
+    minstep = 5000
+    nstep0 = 1000
+    nstep1 = 50000
+    nstep2 = ns
     
     #### simulations ####
     ## cpu / 1 fs timestep ##
     # minimize and 0 to 1 K for 1 ps
     smin, sysmin, imin = dynamix(systm, None, nstep0, prmtop, t_min, ts0, 'cpu', min=minstep)
-    s4, sys4, i4 = dynamix(systm, smin, 2*nstep1, prmtop, t0_0, ts0, 'gpu')
-    """
     ## gpu / 1 fs timestep ##
     # heating, 1 to 50 K for 100 ps
     s0, sys0, i0 = dynamix(systm, smin, 2*nstep1, prmtop, t0_0, ts0, 'gpu')
@@ -140,9 +138,8 @@ def main():
     s4, sys4, i4 = dynamix(systm, s3, nstep1, prmtop, t1_3, ts1, 'gpu')
     # heating, 250 to 300 K for 10 ns
     # 250-300
-    """
     pre_eq = current_milli_time()
-    simulation, system, integrator = dynamix(systm, s4, nstep2, prmtop, t0_0, ts1, 'gpu')
+    simulation, system, integrator = dynamix(systm, s4, nstep2, prmtop, t2_0, ts1, 'gpu')
     post_eq = current_milli_time()
     total_eq, eq_rate = t_diff(pre_eq, post_eq, ts1, nstep2)
     print('bench: ' + str(eq_rate) + ' hr/ns')

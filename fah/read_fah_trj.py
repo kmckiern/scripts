@@ -1,5 +1,6 @@
 #!/bin/env python
 
+import argparse
 import mdtraj
 import numpy as np
 
@@ -21,7 +22,7 @@ def main():
     # calculate rmsd of trj to xtal structure
     ref = mdtraj.load(args.ref)
     trj.superpose(ref)
-    dists = mdtraj.rmsd(x, ref)
+    dists = mdtraj.rmsd(trj, ref)
     
     # print final rmsd value
     print dists[-1]

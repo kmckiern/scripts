@@ -7,7 +7,7 @@ import numpy as np
 parser = argparse.ArgumentParser(description='get rmsd if fah WU to reference')
 parser.add_argument('--pn', type=str, help='project number', default=None)
 parser.add_argument('--top', type=str, help='topology file')
-parser.add_argument('--ref', type=str, help='reference file')
+parser.add_argument('--rd', type=str, help='reference file directory')
 parser.add_argument('--out', type=str, help='name of output file', default='rmsd.dat')
 args = parser.parse_args()
 
@@ -39,7 +39,8 @@ def main():
     trj = trj.atom_slice(pi)
 
     # calculate rmsd of trj to xtal structure
-    ref = mdtraj.load(args.ref)
+    r = args.rd + t.split('/')[-1].split('_')[0] + '.pdb'
+    ref = mdtraj.load(r)
     trj.superpose(ref)
     dists = mdtraj.rmsd(trj, ref)
     

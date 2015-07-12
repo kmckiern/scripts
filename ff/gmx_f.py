@@ -5,7 +5,7 @@ import argparse
 read in g_energy files for an original configuration, and a perturbation trajectory, 
     and calculates force components for each atom
 example usage
-    >> python /home/kmckiern/scripts/ff/gmx_f.py --up unpert.xvg --p pert.xvg --dx .001 --od gmx
+    >> python ~/scripts/ff/gmx_f.py --up unpert.xvg --p pert.xvg --dx .001 --od gmx
 """
 
 parser = argparse.ArgumentParser(description='get force components')

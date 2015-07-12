@@ -79,5 +79,5 @@ for fg in pforce.keys():
     name = fg.split(';')[0].split('openmm.')[-1]
     f = open(od + '/' + name + '.dat', 'w')
     for i in pforce[fg].split('),'):
-        f.write(i.replace('[(', '').replace(')]', '').replace(' (', '') + '\n')
+        f.write(i.replace(' kJ/(nm mol)', '').replace('[(', '').replace(')]', '').replace(' (', '') + '\n')
     f.close()

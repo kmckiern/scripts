@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-feed in bilayer trj and generate output file with thermodynamic and structural characterization
+feed in 
 example usage:
     >> python /path/analyze_bilayer.py --prod_dir /path/trj_0/ --prod_pref lipid-md \
        --valid_dir tfb323/ --o temp.dat --trim 0.05 --meta_dir /path/ndx/
@@ -73,8 +73,6 @@ def write_results(vdir, out, al, vl, kap):
     f.write('vl: ' + str(vl[0]) + '+-' + str(vl[1]) + '\n')
     f.write('kap: ' + str(kap[0]) + '+-' + str(kap[1]) + '\n')
     f.close()
-def sub_sample(ts, sub=100):
-    return ts[::sub]
 
 # therm0
 # area per lipid
@@ -120,7 +118,7 @@ def kap_ts(time, alts, vdir):
     # flucs are too crazy to plot beginning
     s0 = len(kap)*.25
     plt_save(time[s0:], kap[s0:], vdir + 'kap')
-    kap_deets = mean_stderr(sub_sample(kap))
+    kap_deets = mean_stderr(kap)
     return kap[-1], kap_deets
 # x-ray structure factor
 def calc_fq_real(rho_dehyd, q):
@@ -178,7 +176,7 @@ def main():
     # fix pbc artifacts
     if args.fix:
         gpbc = ['trjconv', '-s', pdir + ppref + '.tpr', '-f', pdir + ppref + '.trr', \
-               '-pbc', 'nojump', '-o', pdir + ppref + '_c.trr', '-skip', '100']
+               '-pbc', 'nojump', '-o', pdir + ppref + '_c.trr']
         cl_gmx(gpbc, ['System'])
 
     props = ['Volume', 'Box-X', 'Box-Y']
@@ -196,8 +194,8 @@ def main():
     scd2 = get_scd('2', pdir, ppref, vdir, meta)
     kap, kap_deets = kap_ts(d[:,0], al_ts, vdir)
     special_kap = (kap, kap_deets[-1])
-    # fq = get_fq(pdir, ppref, vdir, meta)
-    # dl = get_dl(pdir, ppref, vdir, meta, L)
+    fq = get_fq(pdir, ppref, vdir, meta)
+    dl = get_dl(pdir, ppref, vdir, meta, L)
 
     write_results(vdir, out, al_deets, vl_deets, special_kap)
 

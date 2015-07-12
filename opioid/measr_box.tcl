@@ -14,3 +14,4 @@ echo "xval" $x_val
 echo "yval" $y_val
 echo "zval" $z_val
 echo "origin" $origin
+quit

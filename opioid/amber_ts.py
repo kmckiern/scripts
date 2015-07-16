@@ -25,6 +25,11 @@ import pandas as pd
 from fmt_path import format_path
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib as mpl
+mpl.rc('text', usetex = True)
+mpl.rc('font', family = 'serif')
+mpl.rcParams['lines.linewidth'] = 1
+mpl.rcParams.update({'font.size': 12})
 
 parser = argparse.ArgumentParser(description='Amber output file property plotter')
 parser.add_argument('--out_dir', type=str, help='Amber output file directory')
@@ -38,9 +43,8 @@ args = parser.parse_args()
 property_ndxs = {'ANGLE': 8, 'BOND': 7, 'DIHED': 9, 'Density': 20, 'EEL': 11, 'EELEC': 13, 'EHBOND': 14, 'EKCMT': 16, 'EKtot': 5, 'EPtot': 6, 'Etot': 4, 'NB': 10, 'NSTEP': 0, 'PRESS': 3, 'RESTRAINT': 15, 'SURFTEN': 19, 'TEMP(K)': 2, 'TIME(PS)': 1, 'VDWAALS': 12, 'VIRIAL': 17, 'VOLUME': 18, 'EAMBER (non-restraint)': 21}
 min_ndxs = {'BOND': 0, 'ANGLE': 1, 'DIHED': 2, 'VDWAALS': 3, 'EEL': 4, 'HBOND': 5, '1-4 VDW': 6, '1-4 EEL': 7, 'RESTRAINT': 8, 'NSTEP': 9, 'ENERGY': 10, 'RMS': 11, 'GMAX': 12, 'NUMBER': 13}
 
-def movingaverage(interval, window_size):
-    window = np.ones(int(window_size))/float(window_size)
-    return np.convolve(interval, window, 'same')
+def get_color(n):
+    return mpl.cm.spectral(n/4.,1)
 
 def parse_out(of, props):
     """
@@ -128,20 +132,21 @@ def gen_plots(ID, data_arrays, props, file_labels):
                 #    plt.plot(time_ax[:300], arr[:, props[p]][:300], alpha=.5, label=data_label)
                 # else:
                 if data_label == '4bw5':
-                    x = time_ax[50:-2]
-                    y = arr[:, props[p]][50:-2]
+                    x = time_ax
+                    y = arr[:, props[p]]
                 else:
-                    x = time_ax[50:-2:100]
-                    y = arr[:, props[p]][50:-2:100]
-                plt.plot(x, y, alpha=.1, color=colrz[ndx])
+                    x = time_ax[::100]
+                    y = arr[:, props[p]][::100]
+                plt.plot(x, y, alpha=.1, color=get_color(ndx))
                 ts = pd.Series(y, index=x)
-                r_avg = pd.rolling_mean(ts, 25).plot(color=colrz[ndx], label=data_label)
+                r_avg = pd.rolling_mean(ts, 20).plot(color=colrz[ndx], label=data_label)
                 # r_std = pd.rolling_std(ts, 10).plot(style='--')
                 if args.final:
                     plt.plot(time_ax[-1], arr[:, props[p]][-1], 'o', ms=12, color=plt.rcParams['axes.color_cycle'][ndx % n_colors])
             if args.legend:
-                plt.legend(prop={'size':8}, loc=0, frameon=False)
+                plt.legend(loc=0, frameon=False)
             plt.xlim([5000,100000])
+            plt.ylim(np.min(y[150:]), 1.02*np.max(y[150:]))
             pdfs.savefig()
             plt.clf()
     pdfs.close()

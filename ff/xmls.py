@@ -13,8 +13,57 @@ parser = argparse.ArgumentParser(description='convert xml file to ipython xml ob
 parser.add_argument('--xml', type=str, help='path to xml file')
 args = parser.parse_args()
 
+# stolen from LP
+# Atom types from parm99.dat
+Type99 = ["C", "CA", "CB", "CC", "CD", "CK", "CM", "CN", "CQ", "CR", "CT", "CV",
+          "CW", "C*", "CY", "CZ", "C0", "H", "HC", "H1", "H2", "H3", "HA", "H4",
+          "H5", "HO", "HS", "HW", "HP", "HZ", "F", "Cl", "Br", "I", "IM", "IB",
+          "MG", "N", "NA", "NB", "NC", "N2", "N3", "NT", "N*", "NY", "O", "O2",
+          "OW", "OH", "OS", "P", "S", "SH", "CU", "FE", "Li", "IP", "Na", "K",
+          "Rb", "Cs", "Zn", "LP"]
+
+# Mapping of amino acid atom names to new atom classes.  Mostly new
+# atom classes for beta carbons but a few new gamma carbons are
+# defined.  They are named using the number "6" (for carbon) and the
+# one-letter amino acid code.  A few exceptions in the case of alternate
+# protonation states.
+NewAC = {"SER":{"CB":"6S"}, "THR":{"CB":"6T", "CG2":"6t"}, "LEU":{"CB":"6L"},
+         "VAL":{"CB":"6V"}, "ILE":{"CB":"6I", "CG2":"6i"}, "ASN":{"CB":"6N"},
+         "GLN":{"CB":"6Q", "CG":"6q"}, "ARG":{"CB":"6R"}, "HID":{"CB":"6H"},
+         "HIE":{"CB":"6h"}, "HIP":{"CB":"6+"}, "TRP":{"CB":"6W"},
+         "TYR":{"CB":"6Y"}, "PHE":{"CB":"6F"}, "GLU":{"CB":"6E", "CG":"6e"},
+         "ASP":{"CB":"6D"}, "LYS":{"CB":"6K"}, "LYN":{"CB":"6k"},
+         "PRO":{"CB":"6P"}, "CYS":{"CB":"6C"}, "CYM":{"CB":"6c"},
+         "MET":{"CB":"6M"}, "ASH":{"CB":"6d"}, "GLH":{"CB":"6J", "CG":"6j"}}
+
 def xml_parameters(xml_parsed):
     root = xml_parsed.getroot()
+
+    # stole almost all of this from LP
+    xml_AtAc = {}
+    xml_AnAc = {}
+    for force in root:
+        if force.tag == 'AtomTypes':
+            for atype in force:
+                xml_AtAc[atype.attrib["name"]] = atype.attrib["class"]
+    
+    # Build a mapping of Amino Acid / Atom Names -> Atom Types
+    for force in root:
+        if force.tag == 'Residues':
+            for res in force:
+                xml_AnAc[res.attrib["name"]] = {}
+                for atom in res:
+                    if atom.tag == 'Atom':
+                        xml_AnAc[res.attrib["name"]][atom.attrib["name"]] = xml_AtAc[atom.attrib["type"]]
+    
+    # For each amino acid, create the mapping of the new atom type (in FB15) back to the old atom type (in AMBER99SB).
+    RevMap = {}
+    for k1, v1 in NewAC.items():
+        for k2, v2 in v1.items():
+            if v2 in RevMap.keys():
+                print "Atom type already in reverse map"
+                raise RuntimeError
+            RevMap[v2] = xml_AnAc[k1][k2]
 
     # OpenMM Atom Types to Atom Class
     OAtAc = OrderedDict()
@@ -178,11 +227,11 @@ def xml_parameters(xml_parsed):
         if force.tag == 'Residues':
             resnode = force
 
-    return OBondPrm, OAnglePrm, ODihPrm, OImpPrm, ONbPrm
+    return xml_AtAc, xml_AnAc, OBondPrm, OAnglePrm, ODihPrm, OImpPrm, ONbPrm
 
 def main():
     xml = ET.parse(args.xml)
-    xml_BondPrm, xml_AnglePrm, xml_DihPrm, xml_ImpPrm, xml_NbPrm = xml_parameters(xml)
+    xml_AtAc, xml_AnAc, xml_BondPrm, xml_AnglePrm, xml_DihPrm, xml_ImpPrm, xml_NbPrm = xml_parameters(xml)
     
     IPython.embed()
 

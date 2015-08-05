@@ -4,18 +4,21 @@ import mdtraj
 from mdtraj import Trajectory as t
 import os, sys
 from toolz import *
+import argparse
+
+parser = argparse.ArgumentParser(description='lig-template pdb generation')
+parser.add_argument('--trj_dir', type=str, help='directory of simulation trajectories')
+parser.add_argument('--top', type=int, help='reference pdb topology')
+parser.add_argument('--stride', type=int, help='trj subsample rate')
+parser.add_argument('--cut', type=int, help='frames before this index will be cut')
+args = parser.parse_args()
 
 # combine trajectories
-trjs = [f for f in os.listdir('.') if 'equil' in f and 'netcdf' in f] 
-trjs = natural_sort(trjs)
-ts = {}
-for i in trjs:
-    ts[i] = t.load(i, top='clc2_eq.pdb', stride=5)
-z = ts[trjs[0]][-1]
+trjs = [f for f in os.listdir(args.trj_dir) if 'equil' in f and 'netcdf' in f] 
+trjs = natural_sort(trjs, top=args.top, stride=args.stride)
+ts = t.load(trjs[0])
 for i in trjs[1:]:
-    print 'z: ', z
-    print 'i: ', i
-    z = z + ts[i][-1]
+    ts += t.load(i, top=args.top, stride=args.stride)
 
 # save combined data
-z.save_pdb('out.pdb')
+ts[cut:].save_pdb(args.trj_dir + '/out.pdb')

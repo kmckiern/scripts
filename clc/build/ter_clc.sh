@@ -10,11 +10,6 @@ STDIN=( ${@} )
 for i in "${STDIN[@]}"; do
     bash ~/Dropbox/scripts/trek/build/ter_trek.sh $i
 
-    # special lipid
-    sed -i '.bak' '/O12 PGR/a\
-    TER\
-    '  $i
-
     # protonate gating GLUs
     sed -i '.bak' 's/GLU X 128/GLH X 128/g' $i
     sed -i '.bak' 's/GLU X 614/GLH X 614/g' $i

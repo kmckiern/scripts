@@ -3,7 +3,6 @@
 import mdtraj
 from mdtraj import Trajectory as t
 import os, sys
-from toolz import *
 import argparse
 
 parser = argparse.ArgumentParser(description='lig-template pdb generation')
@@ -11,7 +10,12 @@ parser.add_argument('--trj_dir', type=str, help='directory of simulation traject
 parser.add_argument('--top', type=int, help='reference pdb topology')
 parser.add_argument('--stride', type=int, help='trj subsample rate')
 parser.add_argument('--cut', type=int, help='frames before this index will be cut')
+parser.add_argument('--sr', type=str, help='script root', default='/home/kmckiern/scripts/')
 args = parser.parse_args()
+
+sr = args.sr
+sys.path.insert(0, sr + 'py_general/')
+from toolz import natural_sort
 
 # combine trajectories
 trjs = [f for f in os.listdir(args.trj_dir) if 'equil' in f and 'netcdf' in f] 

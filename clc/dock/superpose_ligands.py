@@ -2,6 +2,10 @@
 
 """
 for superposing two atoms over a subset of atom indices
+example usage:
+    >> python ~/Dropbox/scripts/clc/dock/superpose_ligands.py --ref first/b6.mol2
+        --translate b6.mol2 --select "index 0 to 9 or index 19" 
+        --pout compare_b6.pdb
 """
 
 import argparse

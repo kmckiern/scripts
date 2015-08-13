@@ -6,6 +6,7 @@ from collections import OrderedDict
 import xml.etree.ElementTree as ET
 import parmed
 import argparse
+from operator import itemgetter
 import IPython
 
 parser = argparse.ArgumentParser(description='rewrite charmm rtf to have amber atom names')
@@ -68,12 +69,7 @@ def rewrite_rtf(lines, rmap):
             else:
                 res_rm = None
         # replace old atom types
-        elif specifier == 'ATOM':
-            spec, At, Ac, ACharge = s
-            if res_rm != None and At in res_rm:
-                old, new = format_at(At, res_rm[At])
-                line = line.replace(old, new)
-        elif specifier == 'BOND':
+        if specifier  in ['ATOM', 'BOND', 'IMPROPER', 'DONOR', 'ACCEPTOR']:
             for At in s:
                 if res_rm != None and At in res_rm:
                     old, new = format_at(At, res_rm[At])
@@ -99,7 +95,7 @@ def main():
     c_AtAc, lines = parse_rtf(args.rtf)
     a_AtAc = parse_amb_ref(args.op)
 
-    same_res = set(c_AtAc).intersection(a_AtAc)
+    same_res = set(c_AtAc).intersection(set(a_AtAc))
     rmap = {}
     for res in same_res:
         cr = c_AtAc[res]
@@ -110,9 +106,18 @@ def main():
             # for each unique atom type, try to match by atom class
             match = {}
             for cu in c_uniq:
-                for au in a_uniq:
+                overlap = []
+                for a_ndx, au in enumerate(a_uniq):
                     if cr[cu] == ar[au]:
-                        match[cu] = au
+                        overlap.append(len(set(cu).intersection(set(au))))
+                    else:
+                        overlap.append(0)
+                if len(overlap) > 0:
+                    # replace most similar corresponding AT
+                    a_ndx = max(enumerate(overlap), key=itemgetter(1))[0]
+                    au = a_uniq[a_ndx]
+                    match[cu] = au
+                    a_uniq.pop(a_ndx)
             rmap[res] = match
         else:
             print 'something is wrong: ', res
@@ -121,6 +126,8 @@ def main():
     with open('test.rtf', 'wb') as f:
         for line in out:
             f.write(line)
+
+    print 'residues not parsed: ', set(c_AtAc) - set(a_AtAc)
 
 if __name__ == '__main__':
     main()

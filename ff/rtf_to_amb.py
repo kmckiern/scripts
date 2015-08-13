@@ -73,7 +73,12 @@ def rewrite_rtf(lines, rmap):
             if res_rm != None and At in res_rm:
                 old, new = format_at(At, res_rm[At])
                 line = line.replace(old, new)
-            lines[i] = line
+        elif specifier == 'BOND':
+            for At in s:
+                if res_rm != None and At in res_rm:
+                    old, new = format_at(At, res_rm[At])
+                    line = line.replace(old, new)
+        lines[i] = line
     return lines
 
 def parse_amb_ref(off_path):

@@ -30,7 +30,7 @@ def parse_rtf(rtf):
             spec, Anum, At, mass = s
             AtAm[At] = mass
         # profile atom name to atom type on a per residue basis
-        elif specifier.startswith("RESI"):
+        elif specifier.startswith('RESI') or specifier.startswith('PRES'):
             spec, AA, AACharge = s
             AtAc[AA] = dict()
         # populate residue indexed map from atom names to atom types
@@ -46,13 +46,12 @@ def format_at(old, new):
     if lo == ln:
         return old, new
     diff = lo-ln
-    if diff == 1:
-        return old, new + ' '
-    elif diff == -1:
-        return old + ' ', new
-    else:
-        print 'formatting assumption incorrect: ', old, new
-        return None
+    for space in range(abs(diff)):
+        if diff < 0:
+                old += ' '
+        else:
+                new += ' '
+    return old, new
 
 def rewrite_rtf(lines, rmap):
     res = None
@@ -62,18 +61,26 @@ def rewrite_rtf(lines, rmap):
         if len(s) == 0: continue
         specifier = s[0]
         # determine which residue we're parsing
-        if specifier.startswith("RESI"):
+        if specifier.startswith('RESI') or specifier.startswith('PRES'):
+            print s
             spec, res, AACharge = s
             if res in rmap.keys():
                 res_rm = rmap[res]
             else:
                 res_rm = None
         # replace old atom types
-        if specifier  in ['ATOM', 'BOND', 'IMPROPER', 'DONOR', 'ACCEPTOR']:
+        if specifier in ['ATOM', 'BOND', 'IMPROPER', 'DONOR', 'ACCEPTOR', 'IC', 'DELETE']:
             for At in s:
                 if res_rm != None and At in res_rm:
                     old, new = format_at(At, res_rm[At])
+                    # bond v justification is tricky, so here's a hack
+                    if len(new) == 4 and specifier == 'BOND':
+                        new += ' '
+                        if s.index(At) == len(s) - 1:
+                            old = old[:-1]
+                    print '0: ', line
                     line = line.replace(old, new)
+                    print 'f: ', line
         lines[i] = line
     return lines
 

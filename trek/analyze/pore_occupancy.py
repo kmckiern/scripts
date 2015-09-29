@@ -6,8 +6,8 @@ import argparse
 
 parser = argparse.ArgumentParser(description='get water and ion occupancy of trek pore')
 parser.add_argument('--trj', type=str, help='trajectory')
-parser.add_argument('--out', type=str, help='output trajectory', default='out.dcd')
 parser.add_argument('--top', type=str, help='reference pdb topology')
+parser.add_argument('--out', type=str, help='out file', default='sf_water.dat')
 args = parser.parse_args()
 
 # via http://stackoverflow.com/questions/1208118/using-numpy-to-build-an-array-of-all-combinations-of-two-arrays
@@ -40,9 +40,12 @@ atom_pairs = cartesian((ri, wi))
 distances = mdtraj.compute_distances(trj, atom_pairs)
 
 frame_occupancy = []
-for frame in distances:
+for f_num, frame in enumerate(distances):
     h2o = []
     for ndx, pair in enumerate(frame):
         if pair < .6:
-            h2o.append(tp[ndx][-1])
-    frame_occupancy.append(len(set(h2o)))
+            h2o.append(atom_pairs[ndx][-1])
+    frame_occupancy.append((f_num, len(set(h2o))))
+
+fo = np.array(frame_occupancy)
+np.savetxt(args.out, fo)

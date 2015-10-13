@@ -1,5 +1,10 @@
 #!/bin/env python
 
+"""
+example usage:
+        python pore_occupancy.py --trj /home/harrigan/data/trek/processed/p9761/17/14/cnv.xtc --top 4xdk.pdb --out sf_h2o_p9761_17_14.dat
+"""
+
 import mdtraj
 import numpy as np
 import argparse
@@ -20,32 +25,43 @@ def cartesian(arrays, out=None):
     n = np.prod([x.size for x in arrays])
     if out is None:
         out = np.zeros([n, len(arrays)], dtype=dtype)
-    m = n / arrays[0].size
+    m = int(n / arrays[0].size)
     out[:,0] = np.repeat(arrays[0], m)
     if arrays[1:]:
         cartesian(arrays[1:], out=out[0:m,1:])
-        for j in xrange(1, arrays[0].size):
+        for j in range(1, arrays[0].size):
             out[j*m:(j+1)*m,1:] = out[0:m,1:]
     return out
 
-# GLYs located in center of each selectivity filter strand
-reference_indxs = [101, 210, 362, 471]
-ri = np.array(reference_indxs)
+def filter_distances(distances, cutoff, atom_pairs):
+    frame_occupancy = []
+    for f_num, frame in enumerate(distances):
+        h2o = []
+        for ndx, pair in enumerate(frame):
+            if pair <= cutoff:
+                h2o.append(atom_pairs[ndx][-1])
+        frame_occupancy.append((f_num, len(set(h2o))))
+    return frame_occupancy
+
+x = mdtraj.load(args.top)
+
+# CA of each GLY located centerally to each selectivity filter strand
+res_indxs = [102, 211, 363, 472]
+atom_indxs = []
+for ref in res_indxs:
+    atom_indxs += [atom.index for atom in x.top.atoms if ((atom.residue.resSeq == ref) and (atom.name == 'CA'))]
+ri = np.array(atom_indxs)
 
 trj = mdtraj.load(args.trj, top=args.top)
+
 wi = trj.top.select('water')
+w_atom_pairs = cartesian((ri, wi))
+w_distances = mdtraj.compute_distances(trj, w_atom_pairs)
+wo = np.array(filter_distances(w_distances, .8000001, w_atom_pairs))
+np.savetxt('out/water_' + args.out, wo)
 
-atom_pairs = cartesian((ri, wi))
-
-distances = mdtraj.compute_distances(trj, atom_pairs)
-
-frame_occupancy = []
-for f_num, frame in enumerate(distances):
-    h2o = []
-    for ndx, pair in enumerate(frame):
-        if pair < .6:
-            h2o.append(atom_pairs[ndx][-1])
-    frame_occupancy.append((f_num, len(set(h2o))))
-
-fo = np.array(frame_occupancy)
-np.savetxt(args.out, fo)
+ki = np.array([i.index for i in trj.top.atoms_by_name('K+')])
+k_atom_pairs = cartesian((ri, ki))
+k_distances = mdtraj.compute_distances(trj, k_atom_pairs)
+ko = np.array(filter_distances(k_distances, .8000001, k_atom_pairs))
+np.savetxt('out/k_' + args.out, ko)

@@ -15,36 +15,14 @@ parser.add_argument('--top', type=str, help='reference pdb topology')
 parser.add_argument('--out', type=str, help='out file', default='sf_water.dat')
 args = parser.parse_args()
 
-# via http://stackoverflow.com/questions/1208118/using-numpy-to-build-an-array-of-all-combinations-of-two-arrays
-def cartesian(arrays, out=None):
-    """
-    Generate a cartesian product of input arrays.
-    """
-    arrays = [np.asarray(x) for x in arrays]
-    dtype = arrays[0].dtype
-    n = np.prod([x.size for x in arrays])
-    if out is None:
-        out = np.zeros([n, len(arrays)], dtype=dtype)
-    m = int(n / arrays[0].size)
-    out[:,0] = np.repeat(arrays[0], m)
-    if arrays[1:]:
-        cartesian(arrays[1:], out=out[0:m,1:])
-        for j in range(1, arrays[0].size):
-            out[j*m:(j+1)*m,1:] = out[0:m,1:]
-    return out
+# parameters obtained from visual inspection in vmd ... could be better
+# help to define the boundary of the selectivity filter
+z_offset = 0.0
+cyl_length = .5
+cyl_radius = .58
 
-def filter_distances(distances, cutoff, atom_pairs):
-    frame_occupancy = []
-    for f_num, frame in enumerate(distances):
-        h2o = []
-        for ndx, pair in enumerate(frame):
-            if pair <= cutoff:
-                h2o.append(atom_pairs[ndx][-1])
-        frame_occupancy.append((f_num, len(set(h2o))))
-    return frame_occupancy
-
+# get reference indices
 x = mdtraj.load(args.top)
-
 # CA of each GLY located centerally to each selectivity filter strand
 res_indxs = [102, 211, 363, 472]
 atom_indxs = []
@@ -52,16 +30,25 @@ for ref in res_indxs:
     atom_indxs += [atom.index for atom in x.top.atoms if ((atom.residue.resSeq == ref) and (atom.name == 'CA'))]
 ri = np.array(atom_indxs)
 
-trj = mdtraj.load(args.trj, top=args.top)
+# reference z coordinate
+ref_z = np.avg(x.xyz[0][ri][:,-1])
+ref_xy = np.array(np.average(x.xyz[0][ri][:,0]), np.average(x.xyz[0][ri][:,1]))
 
-wi = trj.top.select('water')
-w_atom_pairs = cartesian((ri, wi))
-w_distances = mdtraj.compute_distances(trj, w_atom_pairs)
-wo = np.array(filter_distances(w_distances, .8000001, w_atom_pairs))
-np.savetxt('out/water_' + args.out, wo)
-
+traj = mdtraj.load(args.trj, top=args.top)
+wi = [atom.index for atom in traj.topology.atoms if (atom.residue.is_water and (atom.element.symbol == 'O'))]
 ki = np.array([i.index for i in trj.top.atoms_by_name('K+')])
-k_atom_pairs = cartesian((ri, ki))
-k_distances = mdtraj.compute_distances(trj, k_atom_pairs)
-ko = np.array(filter_distances(k_distances, .8000001, k_atom_pairs))
-np.savetxt('out/k_' + args.out, ko)
+nf = len(trj)
+# time series of frame, n_h2o, n_k
+time_series = np.zeros([nf, 3])
+for frame in range(nf):
+    time_series[frame][0] = frame
+    for ndx, atom_type in enumerate([wi, ki]):
+        atz = trj.xyz[frame][atom_type][:,-1]
+        atz -= ref_z 
+        z_filter = [i for i, val in enumerate(atz) if ((val > -cyl_length) & (val < cyl_length))]
+        # shift center to reference and calc norm
+        norm_xy = np.array((trj.xyz[frame][atom_type][:,0]-ref_xy[0])**2 + (trj.xyz[frame][atom_type][:,1]-ref_xy[1])**2)
+        xy_filter = [i for i, val in enumerate(norm_xy) if (val < cyl_radius)]
+        time_series[frame][ndx] = len(xy_filter)
+# save
+np.savetxt('out/test_' + args.out, time_series)

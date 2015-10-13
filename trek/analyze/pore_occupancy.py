@@ -8,6 +8,7 @@ example usage:
 import mdtraj
 import numpy as np
 import argparse
+import IPython
 
 parser = argparse.ArgumentParser(description='get water and ion occupancy of trek pore')
 parser.add_argument('--trj', type=str, help='trajectory')
@@ -31,24 +32,26 @@ for ref in res_indxs:
 ri = np.array(atom_indxs)
 
 # reference z coordinate
-ref_z = np.avg(x.xyz[0][ri][:,-1])
-ref_xy = np.array(np.average(x.xyz[0][ri][:,0]), np.average(x.xyz[0][ri][:,1]))
+ref_z = np.average(x.xyz[0][ri][:,-1])
+ref_xy = [np.average(x.xyz[0][ri][:,0]), np.average(x.xyz[0][ri][:,1])]
 
 traj = mdtraj.load(args.trj, top=args.top)
 wi = [atom.index for atom in traj.topology.atoms if (atom.residue.is_water and (atom.element.symbol == 'O'))]
-ki = np.array([i.index for i in trj.top.atoms_by_name('K+')])
-nf = len(trj)
+ki = np.array([i.index for i in traj.top.atoms_by_name('K+')])
+nf = len(traj)
 # time series of frame, n_h2o, n_k
 time_series = np.zeros([nf, 3])
 for frame in range(nf):
     time_series[frame][0] = frame
     for ndx, atom_type in enumerate([wi, ki]):
-        atz = trj.xyz[frame][atom_type][:,-1]
-        atz -= ref_z 
+        atz = traj.xyz[frame][atom_type][:,-1]
+        atz -= ref_z
         z_filter = [i for i, val in enumerate(atz) if ((val > -cyl_length) & (val < cyl_length))]
         # shift center to reference and calc norm
-        norm_xy = np.array((trj.xyz[frame][atom_type][:,0]-ref_xy[0])**2 + (trj.xyz[frame][atom_type][:,1]-ref_xy[1])**2)
+        atzy = traj.xyz[frame][atom_type][z_filter,0:2]
+        atzy -= ref_xy
+        norm_xy = np.sum(np.square(atzy), axis=1)
         xy_filter = [i for i, val in enumerate(norm_xy) if (val < cyl_radius)]
-        time_series[frame][ndx] = len(xy_filter)
+        time_series[frame][ndx+1] = len(xy_filter)
 # save
-np.savetxt('out/test_' + args.out, time_series)
+np.savetxt('test_' + args.out, time_series)

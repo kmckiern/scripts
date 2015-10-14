@@ -18,9 +18,10 @@ args = parser.parse_args()
 
 # parameters obtained from visual inspection in vmd ... could be better
 # help to define the boundary of the selectivity filter
-z_offset = 0.0
-cyl_length = .5
-cyl_radius = .58
+cyl_radius = .65
+z_offset = 0.1
+cyl_length = .6
+cyl_length += z_offset
 
 # get reference indices
 x = mdtraj.load(args.top)
@@ -31,27 +32,27 @@ for ref in res_indxs:
     atom_indxs += [atom.index for atom in x.top.atoms if ((atom.residue.resSeq == ref) and (atom.name == 'CA'))]
 ri = np.array(atom_indxs)
 
-# reference z coordinate
-ref_z = np.average(x.xyz[0][ri][:,-1])
-ref_xy = [np.average(x.xyz[0][ri][:,0]), np.average(x.xyz[0][ri][:,1])]
-
 traj = mdtraj.load(args.trj, top=args.top)
 wi = [atom.index for atom in traj.topology.atoms if (atom.residue.is_water and (atom.element.symbol == 'O'))]
 ki = np.array([i.index for i in traj.top.atoms_by_name('K+')])
 nf = len(traj)
 # time series of frame, n_h2o, n_k
-time_series = np.zeros([nf, 3])
+time_series = np.zeros([nf,3])
 for frame in range(nf):
+    # reference coordinates
+    ref_z = np.average(traj.xyz[frame][ri][:,-1])
+    ref_xy = [np.average(traj.xyz[frame][ri][:,0]), np.average(traj.xyz[frame][ri][:,1])]
     time_series[frame][0] = frame
-    for ndx, atom_type in enumerate([wi, ki]):
-        atz = traj.xyz[frame][atom_type][:,-1]
-        atz -= ref_z
-        z_filter = [i for i, val in enumerate(atz) if ((val > -cyl_length) & (val < cyl_length))]
+    for ndx, atom_var in enumerate([wi,ki]):
+        atz = traj.xyz[frame][atom_var][:,-1]
+        z_min = ref_z - cyl_length
+        z_max = ref_z + cyl_length
+        z_filter = [i for i, val in enumerate(atz) if ((val > z_min) & (val < z_max))]
         # shift center to reference and calc norm
-        atzy = traj.xyz[frame][atom_type][z_filter,0:2]
+        atzy = traj.xyz[frame][atom_var][z_filter,0:2]
         atzy -= ref_xy
         norm_xy = np.sum(np.square(atzy), axis=1)
         xy_filter = [i for i, val in enumerate(norm_xy) if (val < cyl_radius)]
         time_series[frame][ndx+1] = len(xy_filter)
 # save
-np.savetxt('test_' + args.out, time_series)
+np.savetxt('out/cyl_' + args.out, time_series)

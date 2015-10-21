@@ -16,8 +16,8 @@ def plot_pmf(element, timeseries):
     bins = np.arange(0, nb)
     for i, ts in enumerate(timeseries):
         t = np.genfromtxt(ts)
-        hist, bin_edges = np.histogram(t[:,col], bins=bins, normed=1, label=data[i])
-        plt.plot(bin_edges[:-1], hist, '-o', label=i)
+        hist, bin_edges = np.histogram(t[:,col], bins=bins, normed=1)
+        plt.plot(bin_edges[:-1], hist, '-o', label=data[i])
 
     plt.legend(loc=0)
     plt.title('selectivity filter ' + symbol + ' PMF')

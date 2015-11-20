@@ -16,16 +16,15 @@ import IPython
 
 parser = argparse.ArgumentParser(description='get water and ion occupancy of trek sf')
 parser.add_argument('--tf', type=str, help='trajectory file')
-parser.add_argument('--start', type=str, help='start bin for sum window')
-parser.add_argument('--end', type=str, help='end bin for sum window')
-parser.add_argument('--out', type=str, help='out file', default='sf_water.dat')
+parser.add_argument('--start', type=int, help='start bin for sum window')
+parser.add_argument('--end', type=int, help='end bin for sum window')
 args = parser.parse_args()
 
 # parameters obtained from visual inspection in vmd ... could be better
 # help to define the boundary of the selectivity filter
-cyl_radius = .6
-z_slice = 0.1
-cyl_length = 1.2
+cyl_radius = .55
+z_slice = 0.2
+cyl_length = 1.0
 num_bins = round(cyl_length/z_slice)
 full_l = 2.0*cyl_length
 nb = 2 * num_bins
@@ -99,14 +98,18 @@ def discrete_bins(traj, wi, ki, z_min, z_max, xy_cent):
 
     return time_series
 
+# if state = end = None, full matrix will be summed
 def sum_bins(start, end, timeseries):
      totaled = np.sum(timeseries[start:end], axis=0)
      return totaled
 
 # tsave
-def write_bins(of, time_series):
-    for ndx, bin_vals in enumerate(time_series):
-        np.savetxt('testing/b' + str(ndx) + '/' + of, bin_vals)
+def write_bins(of, time_series, out_pref):
+    if len(time_series.shape) == 3:
+        for ndx, bin_vals in enumerate(time_series):
+            np.savetxt(out_pref + str(ndx) + '/' + of, bin_vals)
+    else:
+        np.savetxt(out_pref + '_' + of, time_series)
     
 def write_features(t_ndx, time_series):
     with dataset('occupancy', 'a', fmt='dir-npy') as ds:
@@ -120,13 +123,28 @@ def main():
         trj_geo = init_trj(t, top)
         bin_timeseries = discrete_bins(*trj_geo)
 
+        # label stuff
+        tsplit = t.split('/')
+        label = '_'.join(tsplit[6:-2]) + '.dat'
+
         # write bin data
-        write_bins(args.out, bin_timeseries)
+        write_bins(label, bin_timeseries, 'bins/b')
         # sum over bins for feature vector of SF occupancy
-        bin_window = sum_bins(args.start, args.end, bin_timeseries)
+        first = args.start
+        last = args.end
+        bin_window = sum_bins(first, last, bin_timeseries)
+        write_bins(label, bin_window, 'bins/summed/w_' + str(first) + '_' + str(last))
         write_features(t_ndx, bin_window)
 
+        """
+        # for visualization
+        if t_ndx == 0:
+            tg_t, wi, ki, z_min, z_max, xy_cent = trj_geo
+            tg_t[0].save_pdb('look.pdb')
+            print ('frame zero SF geometry: ', z_min[0], z_max[0], xy_cent[0])
+
         IPython.embed()
+        """
 
 if __name__ == '__main__':
     main()

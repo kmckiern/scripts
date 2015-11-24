@@ -121,7 +121,7 @@ def main():
         label = trj.strip()
 
         # read in and histogram ions and water molecules
-        t = 'sf_trjs/' + label + '.xtc'
+        t = 'trjs/' + label + '.xtc'
         top = 'tops/p9761_79_12.pdb'
 
         # get trj info

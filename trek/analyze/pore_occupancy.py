@@ -12,6 +12,7 @@ import glob
 from natsort import natsorted
 from msmbuilder.dataset import dataset
 import pandas as pd
+import os.path
 import IPython
 
 parser = argparse.ArgumentParser(description='get water and ion occupancy of trek sf')
@@ -33,8 +34,8 @@ res_indxs = [101, 210, 362, 471]
 
 def init_trj(trajectory, topology):
     # load trjs
-    trjs = natsorted(glob.glob('/'.join(trajectory.split('/')[:-1]) + '/*.nc'))
-    traj = mdtraj.load(trjs, top=topology)
+    traj = mdtraj.load(trajectory, top=topology)
+
     pi = traj.top.select('protein')
     traj = traj.superpose(traj, atom_indices=pi)
     
@@ -68,6 +69,7 @@ def discrete_bins(traj, wi, ki, z_min, z_max, xy_cent):
     # time series of bin by frame, n_h2o, n_k
     time_series = np.zeros([nb, nf, 2])
 
+    z_lbls = []
     for ndx, atom_var in enumerate([wi, ki]):
         zs = traj.xyz[:, atom_var, -1]
         # label above (1), within (0), or below (-1) sf wrt z
@@ -75,6 +77,7 @@ def discrete_bins(traj, wi, ki, z_min, z_max, xy_cent):
         z_scale[(z_scale >= 0.0) & (z_scale <= full_l)] = 0
         z_scale[z_scale < 0.0] = -1
         z_scale[z_scale > full_l] = 1
+        z_lbls.append(z_scale)
     
         xys = traj.xyz[:,atom_var,:2]
         # label if within radius of sf (0), or outside (1)
@@ -96,7 +99,7 @@ def discrete_bins(traj, wi, ki, z_min, z_max, xy_cent):
             tval, tbin = np.histogram(final_z, bins=nb, range=(z_min[frame], z_max[frame]))
             time_series[:, frame, ndx] = tval
 
-    return time_series
+    return time_series, z_lbls
 
 # if state = end = None, full matrix will be summed
 def sum_bins(start, end, timeseries):
@@ -107,26 +110,30 @@ def sum_bins(start, end, timeseries):
 def write_bins(of, time_series, out_pref):
     if len(time_series.shape) == 3:
         for ndx, bin_vals in enumerate(time_series):
-            np.savetxt(out_pref + str(ndx) + '/' + of, bin_vals)
+            np.save(out_pref + str(ndx) + '/' + of, bin_vals)
     else:
-        np.savetxt(out_pref + '_' + of, time_series)
+        np.save(out_pref + '_' + of, time_series)
     
-def write_features(t_ndx, time_series):
-    with dataset('occupancy', 'a', fmt='dir-npy') as ds:
-        ds[t_ndx] = time_series
-
 def main():
     trj_data = open(args.tf).readlines() 
     for t_ndx, trj in enumerate(trj_data):
-        # read in and histogram ions and water molecules
-        t, top = trj.split()
-        trj_geo = init_trj(t, top)
-        bin_timeseries = discrete_bins(*trj_geo)
-
         # label stuff
-        tsplit = t.split('/')
-        label = '_'.join(tsplit[6:-2]) + '.dat'
+        label = trj.strip()
 
+        # read in and histogram ions and water molecules
+        t = 'sf_trjs/' + label + '.xtc'
+        top = 'tops/p9761_79_12.pdb'
+
+        # get trj info
+        trj_geo = init_trj(t, top)
+        # histogram data
+        bin_timeseries, zs = discrete_bins(*trj_geo)
+        # write bin data
+        for ndx, i in enumerate(bin_timeseries):
+            if ndx == 0:
+                write_bins(label, zs[0], 'atom_resolved_bins/water_')
+            if ndx == 1:
+                write_bins(label, zs[1], 'atom_resolved_bins/k_')
         # write bin data
         write_bins(label, bin_timeseries, 'bins/b')
         # sum over bins for feature vector of SF occupancy
@@ -134,17 +141,6 @@ def main():
         last = args.end
         bin_window = sum_bins(first, last, bin_timeseries)
         write_bins(label, bin_window, 'bins/summed/w_' + str(first) + '_' + str(last))
-        write_features(t_ndx, bin_window)
-
-        """
-        # for visualization
-        if t_ndx == 0:
-            tg_t, wi, ki, z_min, z_max, xy_cent = trj_geo
-            tg_t[0].save_pdb('look.pdb')
-            print ('frame zero SF geometry: ', z_min[0], z_max[0], xy_cent[0])
-
-        IPython.embed()
-        """
 
 if __name__ == '__main__':
     main()

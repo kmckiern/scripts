@@ -3,6 +3,8 @@
 """
 example usage:
         python pore_occupancy.py --trj whereever/cnv.xtc --top 4xdk.pdb --out sf_h2o_p9761_17_14.dat
+
+note: use python version >= 3.4
 """
 
 import argparse
@@ -14,8 +16,8 @@ import IPython
 
 parser = argparse.ArgumentParser(description='get water and ion occupancy of trek sf')
 parser.add_argument('--tf', type=str, help='trajectory file')
-parser.add_argument('--gaussian', type='store_true', help='gaussian counting', default=False)
-parser.add_argument('--histogram', type='store_true', help='histogram counting', default=False)
+parser.add_argument('--gaussian', action='store_true', help='gaussian counting', default=False)
+parser.add_argument('--histogram', action='store_true', help='histogram counting', default=False)
 parser.add_argument('--start', type=int, help='start bin for sum window')
 parser.add_argument('--end', type=int, help='end bin for sum window')
 args = parser.parse_args()
@@ -53,8 +55,8 @@ def relevant_indices(trj):
     for ref in res_indxs:
         atom_indxs += [atom.index for atom in trj.top.atoms if ((atom.residue.resSeq == ref) and (atom.name == 'CA'))]
     ri = np.array(atom_indxs)
-    wi = [atom.index for atom in traj.topology.atoms if (atom.residue.is_water and (atom.element.symbol == 'O'))]
-    ki = np.array([i.index for i in traj.top.atoms_by_name('K+')])
+    wi = [atom.index for atom in trj.topology.atoms if (atom.residue.is_water and (atom.element.symbol == 'O'))]
+    ki = np.array([i.index for i in trj.top.atoms_by_name('K+')])
     return ri, wi, ki
 
 def sf_bc(traj, ri):
@@ -97,7 +99,7 @@ def discrete_bins(traj, wi, ki, z_min, z_max, xy_cent):
             in_sf = np.array(list(set(z_good).intersection(xy_good)))
     
             final_z = [traj.xyz[frame, atom_var[i], -1] for i in in_sf]
-    
+
             # histogram the results
             tval, tbin = np.histogram(final_z, bins=nb, range=(z_min[frame], z_max[frame]))
             time_series[:, frame, ndx] = tval
@@ -122,11 +124,11 @@ def main():
     for t_ndx, trjd in enumerate(trj_data):
         # read, load, align
         t, top = trjd.split()
-        label = t.strip()
-        trj = mdtraj.load(t, top=top)
+        label = t.strip().split('/')[-1].split('.')[0]
+        traj = mdtraj.load(t, top=top)
         pi = traj.top.select('protein')
-        trj = trj.superpose(trj, atom_indices=pi)
-        x = trj[0]
+        traj = traj.superpose(traj, atom_indices=pi)
+        x = traj[0]
 
         ri, wi, ki = relevant_indices(x)
         # get ions and water in the selectivity filter
@@ -138,9 +140,9 @@ def main():
 
         if args.histogram:
             # get trj info
-            sfbc = sf_bc(x, ri)
+            z_min, z_max, xy_cent = sf_bc(traj, ri)
             # histogram data
-            bin_timeseries, zs = discrete_bins(traj, wi, ki, *sfbc)
+            bin_timeseries, zs = discrete_bins(traj, wi, ki, z_min, z_max, xy_cent)
 
         # record bin data
         for ndx, i in enumerate(bin_timeseries):

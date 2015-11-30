@@ -7,7 +7,10 @@ from collections import Counter
 import IPython
 
 parser = argparse.ArgumentParser(description='get water and ion flux of trek sf')
-parser.add_argument('--ad', type=str, help='array directory')
+parser.add_argument('--ad', type=str, help='array directory', 
+    default='/home/server/trek/flux/')
+parser.add_argument('--opref', type=str, help='path to output directory', 
+    default='/home/server/trek/flux/')
 args = parser.parse_args()
 
 def main():
@@ -30,7 +33,7 @@ def main():
             flux_out = counts[-2.0] + counts[1.0]
             net_flux[ndx+1] = int(flux_in - flux_out)
 
-        np.savetxt('flux/' + label, net_flux, fmt='%i')
+        np.savetxt(args.opref + label, net_flux, fmt='%i')
 
 if __name__ == '__main__':
     main()

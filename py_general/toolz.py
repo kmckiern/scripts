@@ -11,7 +11,7 @@ def natural_sort(l):
 # call the command line from within python
 def call_cl(command_lst, std=PIPE, pipe_args=[]):
     p = Popen(command_lst, stdout=PIPE, stdin=PIPE, stderr=STDOUT, shell=True)
-    out, err = p.communicate(input='\n'.join(pipe_args))
+    out, err = p.communicate(input=b'\n'.join(pipe_args))
     return out, err
 
 # write the output of a CL call to some file

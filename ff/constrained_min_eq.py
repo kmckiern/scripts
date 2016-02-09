@@ -18,13 +18,13 @@ parser.add_argument('--prmtop', type=str, help='prmtop file')
 parser.add_argument('--trj', type=str, help='trajectory file', default='raw_01.xtc')
 args = parser.parse_args()
 
+# custom force, harmonic positional constraint
 def make_cef(k, hold=['HOH']):
-    # Create a Custom Force
-    cef = mm.CustomExternalForce("k*((x-x0)^2+(y-y0)^2+(z-z0)^2)")
-    cef.addPerParticleParameter("k")
-    cef.addPerParticleParameter("x0")
-    cef.addPerParticleParameter("y0")
-    cef.addPerParticleParameter("z0")
+    cef = mm.CustomExternalForce('k*((x-x0)^2+(y-y0)^2+(z-z0)^2)')
+    cef.addPerParticleParameter('k')
+    cef.addPerParticleParameter('x0')
+    cef.addPerParticleParameter('y0')
+    cef.addPerParticleParameter('z0')
     for i in range(M.na):
         if M.resname[i] not in hold:
             cef.addParticle(i, [k] + [M.xyzs[0][i][j]/10 for j in range(3)])
@@ -32,8 +32,10 @@ def make_cef(k, hold=['HOH']):
             cef.addParticle(i, [0.0] + [M.xyzs[0][i][j]/10 for j in range(3)])
     return cef
 
+# run min or eq simulation, possibly with restraint via make_cef
 def rest_sim(ts, qs, min_steps, k, dont_hold, eq_steps, platf):
-    log.write('pre: ' + str(datetime.datetime.now().time()))
+    lf.write('pre: ' + str(datetime.datetime.now().time()))
+    lf.write('\n')
     integ = mm.VerletIntegrator(ts*unit.picosecond)
     plat = mm.Platform.getPlatformByName(platf)
     system = prmtop.createSystem(nonbondedMethod=app.PME,
@@ -43,26 +45,34 @@ def rest_sim(ts, qs, min_steps, k, dont_hold, eq_steps, platf):
     if k > 0:
         cef = make_cef(k, dont_hold)
         system.addForce(cef)
-        log.write("Created System with restraint", k)
+        lf.write('Created System with restraint' + str(k))
+        lf.write('\n')
     sim = app.Simulation(pdb.topology, system, integ, plat)
     sim.context.setPositions(qs)
     init_V = sim.context.getState(getEnergy=True).getPotentialEnergy()
-    log.write("Created Simulation, Potential = ", init_V)
+    lf.write('Created Simulation, Potential = ' + str(init_V))
+    lf.write('\n')
     if min_steps > 0:
-        log.write('min steps: ', str(min_steps))
+        lf.write('min steps: ' +  str(min_steps))
+        lf.write('\n')
         sim.minimizeEnergy(maxIterations=min_steps)
         final_V = sim.context.getState(getEnergy=True).getPotentialEnergy()
-        log.write("Energy Minimized, Potential = ", final_V)
+        lf.write('Energy Minimized, Potential = ' + str(final_V))
+        lf.write('\n')
     if eq_steps > 0:
-        log.write('eq steps: ', str(min_steps))
+        lf.write('eq steps: ' + str(min_steps))
+        lf.write('\n')
         sim.context.setVelocitiesToTemperature(300*unit.kelvin)
         sim.step(eq_steps)
         final_V = sim.context.getState(getEnergy=True).getPotentialEnergy()
-        log.write("Energy Eq, Potential = ", final_V)
+        lf.write('Energy Eq, Potential = ' + str(final_V))
+        lf.write('\n')
     qs = sim.context.getState(getPositions=True).getPositions()
-    log.write('post: ' + str(datetime.datetime.now().time()))
+    lf.write('post: ' + str(datetime.datetime.now().time()))
+    lf.write('\n')
     return qs, final_V
 
+# set everything up
 pref = args.trj.split('.')[0]
 log = pref + '.log'
 lf = open(log, 'w')
@@ -80,16 +90,19 @@ pos = pdb.positions
 
 ts = 0.0001
 steps = 4
+
 # minimize cpu
-for i in range(1):
-    if steps > 300:
+for i in range(25):
+    if steps > 200:
         break
     if i == 0:
         ref = -1
     else:
         change = V1/ref
-        log.write('dV = ', str(change))
-        log.write('----------------------------')
+        lf.write('dV = ' + str(change))
+        lf.write('\n')
+        lf.write('----------------------------')
+        lf.write('\n')
         if .9 < change < 1.1:
             steps *= 2
         ref = V1
@@ -131,9 +144,13 @@ x.save_gro(pref + '_min.gro')
 
 end_time = str(datetime.datetime.now().time())
 
-log.write('----------------------------')
-log.write('FINAL POTENTIAL: ' + str(V1))
-log.write('start: ' + start_time)
-log.write('end: ' + end_time)
-log.write('----------------------------')
-
+lf.write('----------------------------')
+lf.write('\n')
+lf.write('FINAL POTENTIAL: ' + str(V1))
+lf.write('\n')
+lf.write('start: ' + start_time)
+lf.write('\n')
+lf.write('end: ' + end_time)
+lf.write('\n')
+lf.write('----------------------------')
+Lf.write('\n')

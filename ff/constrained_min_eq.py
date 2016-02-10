@@ -60,7 +60,7 @@ def rest_sim(ts, qs, min_steps, k, dont_hold, eq_steps, platf):
         lf.write('Energy Minimized, Potential = ' + str(final_V))
         lf.write('\n')
     if eq_steps > 0:
-        lf.write('eq steps: ' + str(min_steps))
+        lf.write('eq time (ps): ' + str(ts*eq_steps))
         lf.write('\n')
         sim.context.setVelocitiesToTemperature(300*unit.kelvin)
         sim.step(eq_steps)
@@ -73,24 +73,29 @@ def rest_sim(ts, qs, min_steps, k, dont_hold, eq_steps, platf):
     return qs, final_V
 
 # set everything up
-pref = args.trj.split('.')[0]
+xtra = '_cpu_min_0'
+pref = args.trj.split('.')[0] 
+lpref = pref + xtra
 log = pref + '.log'
 lf = open(log, 'w')
 
 prmtop = app.AmberPrmtopFile(args.prmtop)
-gro_file = pref + '.gro'
+gro_file = lpref + '.gro'
+print (gro_file)
 gro = app.GromacsGroFile(gro_file)
 x = mdtraj.load(gro_file)
-pdb_file = pref + '.pdb'
+pdb_file = lpref + '.pdb'
 x.save_pdb(pdb_file)
+
 pdb = app.PDBFile(pdb_file)
 M = Molecule(pdb_file)
 
 pos = pdb.positions
 
-ts = 0.0001
+ts = 0.0005
 steps = 4
 
+"""
 # minimize cpu
 for i in range(25):
     if steps > 200:
@@ -112,35 +117,39 @@ x.xyz[0] = np.array(pos.value_in_unit(unit.nanometer))
 x.save_pdb(pref + '_cpu_min_0.pdb')
 out_gro = pref + '_cpu_min_0.gro'
 x.save_gro(out_gro)
-
 """
+
 # minimize gpu
-steps = 5000
+steps = 2000
 pos, V1 = rest_sim(ts, pos, steps, 0, None, 0, 'CUDA')
 V1 = V1.value_in_unit(unit.kilojoule/unit.mole)
 x.xyz[0] = np.array(pos.value_in_unit(unit.nanometer))
 x.save_pdb(pref + '_gpu_min_0.pdb')
 
-if V1 > 0:
-    steps = 1
+ts = 0.001
 # eq gpu
-pos, V2 = rest_sim(ts, pos, 0, 0, None, steps, 'CUDA')
+steps = 5000
+pos, V1 = rest_sim(ts, pos, 0, 0, None, steps, 'CUDA')
 x.xyz[0] = np.array(pos.value_in_unit(unit.nanometer))
 x.save_pdb(pref + '_gpu_eq_0.pdb')
 
+"""
 # minimize gpu
-steps = 10000
+steps = 5000
 pos, V1 = rest_sim(ts, pos, steps, 0, None, 0, 'CUDA')
 x.xyz[0] = np.array(pos.value_in_unit(unit.nanometer))
 x.save_pdb(pref + '_gpu_min_1.pdb')
+"""
+
+ts = 0.002
 # eq gpu
-pos, V2 = rest_sim(ts, pos, 0, 0, None, steps, 'CUDA')
-V2 = V2.value_in_unit(unit.kilojoule/unit.mole)
+steps = 125000
+pos, V1 = rest_sim(ts, pos, 0, 0, None, steps, 'CUDA')
+V1 = V1.value_in_unit(unit.kilojoule/unit.mole)
 x.xyz[0] = np.array(pos.value_in_unit(unit.nanometer))
 x.save_pdb(pref + '_gpu_eq_1.pdb')
 
-x.save_gro(pref + '_min.gro')
-"""
+x.save_gro(pref + '_omm_eqd.gro')
 
 end_time = str(datetime.datetime.now().time())
 
@@ -153,4 +162,4 @@ lf.write('\n')
 lf.write('end: ' + end_time)
 lf.write('\n')
 lf.write('----------------------------')
-Lf.write('\n')
+lf.write('\n')

@@ -6,22 +6,25 @@ from sys import stdout
 import argparse
 import parmed as pmd
 import os
+import IPython
 
 parser = argparse.ArgumentParser(description='ef sim')
 parser.add_argument('--prmtop', type=str, help='prm', default='3org_l.prmtop')
 parser.add_argument('--inpcrd', type=str, help='inp', default='3org_ic_0.inpcrd')
+parser.add_argument('--itera', type=str, help='iteration number', default='1')
 args = parser.parse_args()
 
-ipc = args.inpcrd.split('.')[0] + '_0'
+tpref = args.inpcrd.split('.')[0]
+
+titer = args.itera
+piter = str(int(titer) - 1)
+
+ipc = tpref + '_' + piter
 chk_f = ipc + '.chk'
 
-ltrj = sorted(glob.glob(ipc + '*.dcd'))[-1]
-tpref = ltrj.split('.')[0].split('_')
-titer = str(1 + int(tpref[-1]))
 ipc = tpref + '_' + titer
 
 trj_f = ipc + '.dcd'
-chk_f = ipc + '.chk'
 
 parm = pmd.load_file(args.prmtop, args.inpcrd)
 parmed_pdb = args.inpcrd.replace('.inpcrd', '_p.pdb')
@@ -41,8 +44,26 @@ simulation = app.Simulation(parm.topology, system, integrator, platform,
     properties)
 simulation.context.setPositions(pdb.positions)
 
-with open('my_checkpoint.chk', 'rb') as f:
+with open(chk_f, 'rb') as f:
     simulation.context.loadCheckpoint(f.read())
+
+box = simulation.context.getState().getPeriodicBoxVectors()
+V = -.12*unit.volt
+L_z = box[2].value_in_unit(unit.angstrom)[-1]*unit.angstrom
+force_v = mm.CustomExternalForce("V*q_i*((z + (L_z/2))/L_z)")
+force_v.addGlobalParameter("V", V)
+force_v.addGlobalParameter("L_z", L_z)
+force_v.addPerParticleParameter("q_i")
+
+nonbonded = [f for f in system.getForces()][3]
+for i in range(parm.topology.getNumAtoms()):
+    charge = nonbonded.getParticleParameters(i)[0].value_in_unit(unit.elementary_charge)
+    force_v.addParticle(i, [charge])
+system.addForce(force_v)
+
+chk_f = ipc + '.chk'
+
+IPython.embed()
 
 # 10 ns
 nsteps     = 5000000

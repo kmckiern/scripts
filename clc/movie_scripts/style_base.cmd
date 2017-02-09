@@ -18,4 +18,8 @@ setattr m ballScale .12
 sel :Cl-
 color byhetero sel
 rep sphere sel
-show sel
+~show sel
+
+setattr g lineType 1
+setattr g lineWidth 10
+setattr p color green

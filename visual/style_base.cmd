@@ -15,11 +15,13 @@ rep bs
 setattr m stickScale .2
 setattr m ballScale .12
 
-sel :Cl-
+sel
 color byhetero sel
+
+sel :Cl-
 rep sphere sel
 ~show sel
 
-setattr g lineType 1
-setattr g lineWidth 10
+setattr p drawMode 1
+setattr p radius .06
 setattr p color green
